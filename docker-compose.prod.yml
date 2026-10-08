@@ -78,7 +78,8 @@ services:
       SEED_SQL_PATH: /seed/backup.sql
     volumes:
       - ./database:/seed:ro
-    entrypoint: ["/bin/bash", "/seed/seed.sh"]
+    # Strip CR in case the script was checked out with CRLF
+    entrypoint: ["/bin/bash", "-c", "bash <(tr -d '\\r' < /seed/seed.sh)"]
 
   backend:
     image: taskflow-backend:prod
