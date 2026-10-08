@@ -1,0 +1,28 @@
+from datetime import datetime, timezone
+
+from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, Numeric, String, Text
+
+from app.core.connection import Base
+
+
+class LogWork(Base):
+    __tablename__ = "logworks"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    task_id = Column(Integer, ForeignKey("tasks.id"), nullable=False)
+    project_member_id = Column(Integer, ForeignKey("project_members.id"), nullable=False)
+    work_date = Column(Date, nullable=False, index=True)
+    hours_spent = Column(Numeric, nullable=False)
+    title = Column(String(255), nullable=False)
+    work_content = Column(Text, nullable=False)
+    progress_percent = Column(Numeric, nullable=False, default=0)
+    status = Column(String(50), nullable=False, default="PENDING", index=True)
+    approved_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    approved_at = Column(DateTime, nullable=True)
+    review_note = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )

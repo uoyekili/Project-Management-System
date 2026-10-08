@@ -1,0 +1,35 @@
+# =========================
+# Root
+# =========================
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editor config
+.idea/
+.vscode/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs / temp
+logs/
+tmp/
+temp/
+
+# Docker override
+docker-compose.override.yml
+
+# Backup files
+*.bak
+*.backup
+*.tmp
+__pycache__/
+*.py[cod]
+
+# Security keys
+*.pem

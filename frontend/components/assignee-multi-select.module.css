@@ -1,0 +1,130 @@
+.root {
+  position: relative;
+  width: 100%;
+}
+
+.control {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 64px;
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  cursor: text;
+}
+
+.control:focus-within,
+.controlOpen {
+  border-color: var(--color-primary);
+}
+
+.controlDisabled {
+  background: var(--color-surface-muted);
+  cursor: default;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 100%;
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-1);
+  background: var(--color-primary-soft);
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+}
+
+.chipDisabled {
+  padding-right: var(--space-3);
+}
+
+.chipName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chipRemove {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+}
+
+.chipRemove:hover {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+.input {
+  flex: 1 1 140px;
+  min-width: 0;
+  padding: var(--space-1);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--text-sm);
+  background: transparent;
+  border: 0;
+  outline: none;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  right: 0;
+  left: 0;
+  z-index: 30;
+  max-height: 260px;
+  margin: 0;
+  padding: var(--space-1);
+  overflow-y: auto;
+  list-style: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.optionActive,
+.option:hover {
+  background: var(--color-surface-muted);
+}
+
+.optionCopy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.optionMeta {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.empty {
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}

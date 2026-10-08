@@ -1,0 +1,351 @@
+.pageWrap {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  min-height: 0;
+}
+
+.tableSurface {
+  padding: var(--filtered-list-gap) 0.85rem;
+  border-radius: var(--radius-lg);
+}
+
+.tableSurface {
+  min-height: 0;
+}
+
+.emptyFilter {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--table-font-size);
+  line-height: var(--table-line-height);
+}
+
+.emptyFilter p {
+  margin: 0.35rem 0 0;
+  font-size: var(--text-sm);
+}
+
+.emptyFilter strong {
+  display: block;
+  color: var(--color-text);
+  font-size: var(--text-base);
+  font-weight: 650;
+}
+
+.tableWrap {
+  min-height: 0;
+}
+
+.table {
+  width: 100%;
+  min-width: 1040px;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.table td {
+  height: var(--row-height);
+}
+
+.table th,
+.table td {
+  padding: var(--space-2) var(--space-4);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+  font-size: var(--table-font-size);
+  line-height: var(--table-line-height);
+  color: var(--color-text);
+}
+
+.table th {
+  height: 40px;
+  font-size: var(--table-header-font-size);
+  font-weight: var(--weight-semibold);
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  background-color: var(--color-surface-muted);
+}
+
+.clickableRow {
+  cursor: pointer;
+}
+
+.clickableRow:hover td {
+  background: var(--color-primary-soft);
+}
+
+.clickableRow:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: -2px;
+}
+
+.colStaff {
+  width: 16%;
+}
+
+.colProject {
+  width: 18%;
+  max-width: 280px;
+}
+
+.colTask {
+  width: 22%;
+  max-width: 340px;
+}
+
+.colTitle {
+  width: auto;
+  min-width: 200px;
+}
+
+/* Cột số giờ / ngày chỉ rộng vừa nội dung; phần dư nhường cho cột tên logwork. */
+.colHours {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.colDate {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.staffCell {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.avatarToken {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  flex: 0 0 auto;
+  background: var(--color-primary);
+}
+
+.staffName {
+  font-weight: 600;
+  color: var(--color-text);
+  min-width: 0;
+}
+
+.projectCell {
+  max-width: 280px;
+  overflow: hidden;
+}
+
+.projectName,
+.projectText {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.projectName {
+  color: var(--color-primary);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.projectName:hover,
+.taskTitle:hover {
+  text-decoration: underline;
+}
+
+.taskCell {
+  max-width: 340px;
+  overflow: hidden;
+}
+
+.taskTitle,
+.taskText {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-primary);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.taskText {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.titleCell {
+  color: var(--color-text);
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.hoursText,
+.dateText {
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* Header modal chi tiết: tiêu đề thẳng hàng với nút X, nút X màu đỏ */
+.detailModal :global(.app-modal-header) {
+  align-items: center;
+}
+
+.detailModal :global(.app-modal-header h2) {
+  margin-top: 0;
+}
+
+.detailModal :global(.app-modal-header .icon-button) {
+  color: var(--color-danger);
+  background: transparent;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.detailModal :global(.app-modal-header .icon-button:hover:not(:disabled)),
+.detailModal :global(.app-modal-header .icon-button:focus-visible) {
+  color: var(--color-danger-hover);
+  background: var(--color-danger-soft);
+}
+
+.detailBody {
+  gap: 1rem;
+}
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+  margin: 0;
+}
+
+.metaItem {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.3rem;
+  min-height: 3.6rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+  min-width: 0;
+}
+
+.metaGrid dt {
+  margin: 0;
+  font-size: var(--text-2xs);
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.metaGrid dd {
+  margin: 0;
+  font-size: var(--text-base);
+  color: var(--color-text);
+  min-width: 0;
+}
+
+.metaValueEllipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metaPerson {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.metaPersonName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.metaLink {
+  color: var(--color-primary);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 120ms ease;
+}
+
+.metaLink:hover,
+.metaLink:focus-visible {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.sectionPanel {
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+}
+
+.contentPanel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.sectionLabel {
+  display: block;
+  padding: 0.5rem 0.8rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+  font-size: var(--text-2xs);
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.contentBox {
+  flex: 1 1 auto;
+  min-height: 220px;
+  max-height: min(48vh, 440px);
+  padding: 0.9rem 1rem;
+  font-size: var(--text-base);
+  line-height: 1.65;
+  color: var(--color-text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-y: auto;
+}
+
+@media (max-width: 560px) {
+  .metaGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@keyframes logworkRowHighlight {
+  0%,
+  70% {
+    background-color: var(--color-primary-soft);
+  }
+
+  100% {
+    background-color: var(--color-surface);
+  }
+}
+
+.rowHighlight td {
+  animation: logworkRowHighlight 5s ease-out forwards;
+}
+

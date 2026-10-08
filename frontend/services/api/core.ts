@@ -1,0 +1,447 @@
+import axios, { AxiosError, AxiosRequestConfig } from "axios";
+import type {
+  ApiResponse,
+  AuthSession,
+  ChangePasswordPayload,
+  DashboardOverview,
+  Department,
+  EnrichedTask,
+  LogworkEntry,
+  LogworkFilters,
+  LoginPayload,
+  PaginatedUsers,
+  Project,
+  Sprint,
+  SprintFilters,
+  Task,
+  TaskComment,
+  TaskFilters,
+  UpdateProfilePayload,
+  UserDirectoryFilters,
+  UserProfile,
+  UserRole,
+  WorkspaceShellData,
+} from "@/types";
+import { roleLabel } from "@/lib/utils/format";
+import { t } from "@/lib/i18n";
+
+export type EndpointMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+
+export type BackendUserResponse = {
+  id: number;
+  email: string;
+  full_name: string | null;
+  phone_number: string | null;
+  avatar_url: string | null;
+  department: string | null;
+  department_id?: number | null;
+  job_title?: string | null;
+  role: string;
+  permissions?: string[];
+  is_active: boolean;
+  is_admin: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type BackendPaginatedUsers = {
+  items: BackendUserResponse[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+export const DEFAULT_API_PORT = process.env.NEXT_PUBLIC_API_PORT ?? "8000";
+export const NETWORK_ERROR_MESSAGE =
+  "Không kết nối được API backend. Vui lòng kiểm tra backend đang chạy và biến NEXT_PUBLIC_API_BASE_URL.";
+export const BACKEND_WORKSPACE_ID = "taskflow";
+export const BACKEND_SESSION_EXPIRES_IN = 60;
+export const USER_ADMIN_UNAVAILABLE_MESSAGE =
+  "Backend hiện tại chưa hỗ trợ API quản trị người dùng. Tác vụ này mới chỉ chạy ở chế độ preview trên frontend.";
+export const DEFAULT_INTERNAL_API_BASE_URL =
+  process.env.API_BASE_URL_INTERNAL ?? `http://backend:${DEFAULT_API_PORT}`;
+
+function isLoopbackHostname(hostname: string) {
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0";
+}
+
+export function getBackendMeta(): ApiResponse<null>["meta"] {
+  return {
+    source: "backend",
+    latencyMs: 0,
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+export function wrapBackendResponse<T>(data: T): ApiResponse<T> {
+  return {
+    data,
+    meta: getBackendMeta(),
+  };
+}
+
+export function toInitials(name: string) {
+  const parts = name
+    .split(/\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (!parts.length) {
+    return "NA";
+  }
+
+  return parts
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+export function toFrontendRole(backendUser: BackendUserResponse): UserRole {
+  return backendUser.role?.trim() ?? "";
+}
+
+export function toRoleTitle(role: UserRole) {
+  return roleLabel(role);
+}
+
+export function toFrontendUserProfile(backendUser: BackendUserResponse): UserProfile {
+  const resolvedName =
+    backendUser.full_name?.trim() || backendUser.email.split("@")[0] || t("Người dùng");
+  const role = toFrontendRole(backendUser);
+  const userId = `usr-${backendUser.id}`;
+  const avatarUrl = backendUser.avatar_url ?? undefined;
+
+  return {
+    id: userId,
+    name: resolvedName,
+    email: backendUser.email,
+    role,
+    roles: [role],
+    permissions: backendUser.permissions ?? [],
+    title: backendUser.job_title ?? toRoleTitle(role),
+    initials: toInitials(resolvedName),
+    presence: backendUser.is_active ? "online" : "offline",
+    capacityHours: 40,
+    workloadHours: 0,
+    focusScore: 75,
+    isActive: backendUser.is_active,
+    status: backendUser.is_active ? "ACTIVE" : "INACTIVE",
+    phoneNumber: backendUser.phone_number ?? undefined,
+    department: backendUser.department ?? undefined,
+    avatarUrl,
+    jobTitle: backendUser.job_title ?? undefined,
+  };
+}
+
+export function toAuthSession(currentUser: UserProfile): AuthSession {
+  return {
+    accessToken: "",
+    refreshToken: "",
+    tokenType: "cookie",
+    expiresIn: BACKEND_SESSION_EXPIRES_IN,
+    currentUser,
+    workspaceId: BACKEND_WORKSPACE_ID,
+  };
+}
+
+export function getApiBaseUrl() {
+  const configuredBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const internalBaseUrl = process.env.API_BASE_URL_INTERNAL;
+
+  if (typeof window === "undefined") {
+    return internalBaseUrl ?? configuredBaseUrl ?? DEFAULT_INTERNAL_API_BASE_URL;
+  }
+
+  const currentProtocol = window.location.protocol;
+  const currentHostname = window.location.hostname;
+
+  if (!configuredBaseUrl) {
+    return `${currentProtocol}//${currentHostname}:${DEFAULT_API_PORT}`;
+  }
+
+  try {
+    const url = new URL(configuredBaseUrl);
+    if (isLoopbackHostname(url.hostname) && currentHostname) {
+      url.protocol = currentProtocol;
+      url.hostname = currentHostname;
+      if (!url.port) {
+        url.port = DEFAULT_API_PORT;
+      }
+    }
+
+    return url.origin;
+  } catch {
+    return `${currentProtocol}//${currentHostname}:${DEFAULT_API_PORT}`;
+  }
+}
+
+export const apiEndpoints = {
+  auth: {
+    login: { method: "POST" as EndpointMethod, path: "/login" },
+    logout: { method: "POST" as EndpointMethod, path: "/logout" },
+    logoutAll: { method: "POST" as EndpointMethod, path: "/logout-all" },
+    refresh: { method: "GET" as EndpointMethod, path: "/refresh" },
+    changePassword: { method: "PUT" as EndpointMethod, path: "/change-password" },
+    me: { method: "GET" as EndpointMethod, path: "/me" },
+  },
+  projects: {
+    list: { method: "GET" as EndpointMethod, path: "/api/projects" },
+    detail: (projectId: string) => ({
+      method: "GET" as EndpointMethod,
+      path: `/api/projects/${projectId}`,
+    }),
+    create: { method: "POST" as EndpointMethod, path: "/api/projects" },
+    update: (projectId: string) => ({
+      method: "PATCH" as EndpointMethod,
+      path: `/api/projects/${projectId}`,
+    }),
+  },
+  sprints: {
+    list: (projectId: string) => ({
+      method: "GET" as EndpointMethod,
+      path: `/api/projects/${projectId}/sprints`,
+    }),
+    detail: (sprintId: string) => ({
+      method: "GET" as EndpointMethod,
+      path: `/api/sprints/${sprintId}`,
+    }),
+    create: (projectId: string) => ({
+      method: "POST" as EndpointMethod,
+      path: `/api/projects/${projectId}/sprints`,
+    }),
+    update: (sprintId: string) => ({
+      method: "PATCH" as EndpointMethod,
+      path: `/api/sprints/${sprintId}`,
+    }),
+  },
+  tasks: {
+    list: { method: "GET" as EndpointMethod, path: "/api/tasks" },
+    detail: (taskId: string) => ({ method: "GET" as EndpointMethod, path: `/api/tasks/${taskId}` }),
+    create: { method: "POST" as EndpointMethod, path: "/api/tasks" },
+    update: (taskId: string) => ({
+      method: "PATCH" as EndpointMethod,
+      path: `/api/tasks/${taskId}`,
+    }),
+    updateStatus: (taskId: string) => ({
+      method: "PATCH" as EndpointMethod,
+      path: `/api/tasks/${taskId}/status`,
+    }),
+  },
+  logwork: {
+    list: { method: "GET" as EndpointMethod, path: "/api/logwork" },
+    create: { method: "POST" as EndpointMethod, path: "/api/logwork" },
+    update: (entryId: string) => ({
+      method: "PATCH" as EndpointMethod,
+      path: `/api/logwork/${entryId}`,
+    }),
+    remove: (entryId: string) => ({
+      method: "DELETE" as EndpointMethod,
+      path: `/api/logwork/${entryId}`,
+    }),
+  },
+  users: {
+    list: { method: "GET" as EndpointMethod, path: "/api/users" },
+    updateProfile: { method: "PUT" as EndpointMethod, path: "/me/profile" },
+    updatePhone: { method: "PUT" as EndpointMethod, path: "/me/phone" },
+    updateAvatar: { method: "PUT" as EndpointMethod, path: "/me/avatar" },
+    resetAvatar: { method: "DELETE" as EndpointMethod, path: "/me/avatar" },
+  },
+} as const;
+
+export function respond<T>(data: T, latencyMs = 140): Promise<ApiResponse<T>> {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        data,
+        meta: {
+          source: "mock",
+          latencyMs,
+          generatedAt: new Date("2026-06-29T12:00:00Z").toISOString(),
+        },
+      });
+    }, latencyMs);
+  });
+}
+
+export function formatApiError(detail: unknown, fallback: string) {
+  if (typeof detail === "string") {
+    return detail;
+  }
+
+  if (Array.isArray(detail)) {
+    return detail
+      .map((item) => {
+        if (item && typeof item === "object" && "msg" in item) {
+          return String(item.msg);
+        }
+
+        return null;
+      })
+      .filter(Boolean)
+      .join(". ");
+  }
+
+  return fallback;
+}
+
+const axiosInstance = axios.create({
+  withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+axiosInstance.interceptors.request.use((config) => {
+  config.baseURL = getApiBaseUrl();
+  return config;
+});
+
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (value?: unknown) => void; reject: (reason?: unknown) => void }> = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+function isRefreshAuthFailure(error: unknown) {
+  if (!axios.isAxiosError(error)) {
+    return false;
+  }
+
+  const status = error.response?.status;
+  return status === 401 || status === 403;
+}
+
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
+    
+    // Nếu gặp lỗi 401 và không phải là các API Auth thì sẽ gọi refresh
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest.url?.endsWith("/refresh") &&
+      !originalRequest.url?.endsWith("/login") &&
+      !originalRequest.url?.endsWith("/logout") &&
+      !originalRequest._retry
+    ) {
+      if (isRefreshing) {
+        return new Promise(function (resolve, reject) {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(() => {
+            return axiosInstance(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        await axios.get(`${getApiBaseUrl()}/refresh`, { withCredentials: true });
+        isRefreshing = false;
+        processQueue(null);
+        return axiosInstance(originalRequest);
+      } catch (e) {
+        isRefreshing = false;
+        processQueue(e);
+        // Only force logout when the refresh token is truly invalid/revoked.
+        // Temporary network errors should not wipe the local session snapshot.
+        if (typeof window !== "undefined" && isRefreshAuthFailure(e)) {
+          window.dispatchEvent(new Event("taskflow-session-expired"));
+        }
+        return Promise.reject(e);
+      }
+    }
+    
+    if (
+      error.response?.status === 401 && 
+      originalRequest && 
+      originalRequest.url?.endsWith("/refresh")
+    ) {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("taskflow-session-expired"));
+      }
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
+export async function requestApi<T>(
+  endpoint: { method: EndpointMethod; path: string },
+  init?: Omit<RequestInit, "method">,
+): Promise<ApiResponse<T>> {
+  try {
+    const config: AxiosRequestConfig = {
+      url: endpoint.path,
+      method: endpoint.method,
+      data: init?.body ? JSON.parse(init.body as string) : undefined,
+      headers: init?.headers as Record<string, string>,
+    };
+
+    const response = await axiosInstance.request(config);
+    return wrapBackendResponse(response.data as T);
+  } catch (error) {
+    throw toApiError(error);
+  }
+}
+
+function toApiError(error: unknown) {
+  if (axios.isAxiosError(error) && error.response) {
+    const payload = error.response.data;
+    const detail =
+      payload && typeof payload === "object" && "detail" in payload ? payload.detail : null;
+    return Object.assign(new Error(formatApiError(detail, t("Không thể kết nối tới hệ thống xác thực."))), {
+      status: error.response.status,
+    });
+  }
+  return new Error(NETWORK_ERROR_MESSAGE);
+}
+
+/** Gửi multipart/form-data (upload file). Axios tự thêm boundary cho FormData. */
+export async function requestApiForm<T>(
+  endpoint: { method: EndpointMethod; path: string },
+  form: FormData,
+): Promise<ApiResponse<T>> {
+  try {
+    const response = await axiosInstance.request({
+      url: endpoint.path,
+      method: endpoint.method,
+      data: form,
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return wrapBackendResponse(response.data as T);
+  } catch (error) {
+    throw toApiError(error);
+  }
+}
+
+export async function fetchCurrentUserProfile() {
+  const response = await requestApi<BackendUserResponse>(apiEndpoints.auth.me);
+  const backendProfile = toFrontendUserProfile(response.data);
+  return backendProfile;
+}
+
+export function containsSearch(value: string, search?: string) {
+  if (!search) {
+    return true;
+  }
+
+  return value.toLowerCase().includes(search.toLowerCase());
+}
+export function isTaskOpen(task: Task) {
+  return task.status !== "DONE";
+}

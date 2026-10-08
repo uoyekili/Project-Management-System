@@ -1,0 +1,120 @@
+import time
+import uuid
+
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.core.redis_client import redis_client
+from app.models.refresh_token_model import RefreshToken
+from app.models.user_model import User
+from app.repositories import refresh_token_repository, user_repository
+from app.schemas.user_schema import ChangePassword, UserLogin
+from app.utils.jwt_handler import (
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+)
+from app.utils.password_hash import hash_password, verify_password
+
+
+def authenticate_user(db: Session, user: UserLogin) -> dict:
+    db_user = user_repository.get_by_email(db, user.email)
+    if not db_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Email hoặc mật khẩu không chính xác",
+        )
+
+    if not db_user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Tài khoản của bạn đã bị khóa hoặc vô hiệu hóa",
+        )
+
+    is_password_valid = verify_password(user.password, db_user.password_hash)
+    if not is_password_valid:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Email hoặc mật khẩu không chính xác",
+        )
+
+    access_token = create_access_token(data={"id": db_user.id})
+    refresh_token = create_refresh_token(data={"id": db_user.id})
+
+    if refresh_token:
+        jti = uuid.uuid4().hex
+        new_rf_token = RefreshToken(user_id=db_user.id, token_hash=refresh_token, jti=jti)
+        refresh_token_repository.create(db, new_rf_token)
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "user_id": db_user.id,
+    }
+
+
+def refresh_tokens(db: Session, refresh_token: str) -> dict:
+    try:
+        payload = decode_token(refresh_token)
+        user_id = payload.get("id")
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+
+    db_token = refresh_token_repository.get_valid_token(db, refresh_token)
+
+    if not db_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh Token không hợp lệ hoặc đã bị thu hồi",
+        )
+
+    # Generate new access token
+    new_access_token = create_access_token(data={"id": user_id})
+
+    return {
+        "access_token": new_access_token,
+        "refresh_token": refresh_token,
+        "user_id": user_id,
+    }
+
+
+def logout_user(db: Session, refresh_token: str | None, access_token: str | None = None) -> None:
+    if refresh_token:
+        refresh_token_repository.revoke_token(db, refresh_token)
+
+    if access_token:
+        try:
+            redis_client.setex(
+                f"blacklist_token:{access_token}", ACCESS_TOKEN_EXPIRE_MINUTES * 60, "true"
+            )
+        except Exception:
+            pass
+
+
+def logout_all_devices(db: Session, user_id: int, access_token: str | None = None) -> None:
+    refresh_token_repository.revoke_all_for_user(db, user_id)
+
+    try:
+        current_timestamp = int(time.time())
+        redis_client.set(f"user:{user_id}:logout_all", current_timestamp)
+
+        if access_token:
+            redis_client.setex(
+                f"blacklist_token:{access_token}", ACCESS_TOKEN_EXPIRE_MINUTES * 60, "true"
+            )
+    except Exception:
+        pass
+
+
+def change_user_password(db: Session, current_user: User, data: ChangePassword) -> None:
+    is_correct_old_password = verify_password(data.old_password, current_user.password_hash)
+    if not is_correct_old_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Mật khẩu hiện tại không đúng",
+        )
+
+    hashed_new_pass = hash_password(data.new_password)
+    user_repository.update_password(db, current_user.id, hashed_new_pass)
+    refresh_token_repository.revoke_all_for_user(db, current_user.id)

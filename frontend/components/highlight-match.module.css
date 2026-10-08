@@ -1,0 +1,7 @@
+.mark {
+  padding: 0 1px;
+  border-radius: 2px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-hover);
+  font-weight: 700;
+}

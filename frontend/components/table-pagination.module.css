@@ -1,0 +1,85 @@
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--filtered-list-gap);
+  margin-top: 0;
+  flex: 0 0 auto;
+  font-size: var(--table-font-size);
+  line-height: var(--table-line-height);
+}
+
+.bar p {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.pageStatus {
+  min-width: 5.5rem;
+  text-align: center;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.actions :global(.primary-button).pageButton,
+.actions :global(.secondary-button).pageButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 38px;
+  padding: 0.5rem 0.9rem;
+  font-size: var(--table-font-size);
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: none;
+}
+
+.actions :global(.primary-button).pageButton:hover,
+.actions :global(.secondary-button).pageButton:hover {
+  transform: none;
+}
+
+.pageButton svg {
+  flex-shrink: 0;
+  display: block;
+}
+
+.compact .actions :global(.primary-button).pageButton,
+.compact .actions :global(.secondary-button).pageButton {
+  min-height: 28px;
+  padding: 0.15rem 0.6rem;
+  font-size: var(--text-sm);
+  gap: 0.25rem;
+}
+
+.compact .pageStatus {
+  min-width: 0;
+  font-size: var(--text-sm);
+}
+
+.compact .pageButton svg {
+  width: 12px;
+  height: 12px;
+}
+
+@media (max-width: 768px) {
+  .bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actions {
+    justify-content: flex-end;
+  }
+}

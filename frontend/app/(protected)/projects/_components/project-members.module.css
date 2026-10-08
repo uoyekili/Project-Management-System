@@ -1,0 +1,249 @@
+.compactSurface {
+  min-height: 0;
+}
+
+.tableWrap {
+  min-height: 0;
+}
+
+.table {
+  width: 100%;
+  min-width: 860px;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.table td {
+  height: var(--row-height);
+}
+
+/* ── Độ rộng cột ── */
+.table th:nth-child(1) { width: auto; }   /* Thành viên */
+.table th:nth-child(2) { width: 22%; }    /* Email */
+.table th:nth-child(3) { width: 20%; }    /* Vai trò */
+.table th:nth-child(4) { width: 120px; }  /* Ngày tham gia */
+.table th:nth-child(5) { width: 120px; }  /* Trạng thái */
+.table th:nth-child(6) { width: 96px; }   /* Thao tác */
+
+.table th,
+.table td {
+  padding: var(--space-2) var(--space-4);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+  font-size: var(--table-font-size);
+  line-height: var(--table-line-height);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.table th {
+  height: 40px;
+  font-size: var(--table-header-font-size);
+  font-weight: var(--weight-semibold);
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  background-color: var(--color-surface-muted);
+}
+
+/* ── Cột căn giữa ── */
+.table th:nth-child(4),
+.table td:nth-child(4),
+.table th:nth-child(5),
+.table td:nth-child(5) {
+  text-align: center;
+}
+
+.table tbody tr:hover {
+  background: var(--color-surface-muted);
+}
+
+.table :global(.pill) {
+  padding: 0.18rem 0.5rem;
+  font-size: var(--table-pill-font-size);
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.tableEmpty {
+  text-align: center !important;
+  padding: 2rem !important;
+  color: var(--color-text-muted);
+}
+
+.memberCell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.memberCopy {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.memberName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text);
+  font-size: var(--table-font-size);
+  line-height: var(--table-line-height);
+}
+
+.memberCopy small {
+  color: var(--color-text-muted);
+  font-size: var(--table-header-font-size);
+  line-height: 1.35;
+}
+
+.emailCell {
+  min-width: 0;
+}
+
+.roleCell {
+  min-width: 0;
+}
+
+.roleTags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.colActions {
+  text-align: right !important;
+}
+
+.actionCell :global(.secondary-button) {
+  padding: 0.35rem 0.55rem;
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.headerAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.headerAction svg {
+  flex-shrink: 0;
+}
+
+@media (max-width: 1024px) {
+  .tableWrap {
+    overflow-x: auto;
+  }
+
+  .table {
+    min-width: 860px;
+  }
+}
+
+@media (max-width: 768px) {
+  .tableWrap {
+    overflow-x: visible;
+  }
+
+  .table {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .table thead {
+    display: none;
+  }
+
+  .table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .table tbody tr,
+  .memberRow {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .table tbody tr:hover {
+    background: var(--color-surface);
+  }
+
+  .table th,
+  .table td {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border-bottom: none;
+  }
+
+  .memberPrimary {
+    padding-bottom: 0.55rem;
+    margin-bottom: 0.15rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .emailCell,
+  .roleCell,
+  .joinedCell,
+  .statusCell {
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1fr);
+    align-items: start;
+    gap: 0.5rem;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+  }
+
+  .emailCell::before,
+  .roleCell::before,
+  .joinedCell::before,
+  .statusCell::before {
+    content: attr(data-label);
+    font-size: var(--table-header-font-size);
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-subtle);
+    line-height: 1.4;
+  }
+
+  .emailCell {
+    word-break: break-word;
+  }
+
+  .roleCell {
+    overflow: visible;
+  }
+
+  .actionCell {
+    text-align: left;
+    padding-top: 0.25rem;
+  }
+
+  .actionCell:not(:has(button)) {
+    display: none;
+  }
+
+  .tableEmpty {
+    grid-column: auto;
+  }
+}

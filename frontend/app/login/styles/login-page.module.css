@@ -1,0 +1,247 @@
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--color-surface);
+}
+
+/* ───── Panel thương hiệu ───── */
+.brand {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding: var(--space-10) 56px;
+  overflow: hidden;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.brand > :not(.blob) {
+  position: relative;
+  z-index: 1;
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.blobBlue {
+  top: -140px;
+  right: -110px;
+  width: 360px;
+  height: 360px;
+  background: rgba(var(--primary-rgb), 0.1);
+}
+
+.blobAmber {
+  bottom: -80px;
+  left: -70px;
+  width: 240px;
+  height: 240px;
+  background: rgba(var(--accent-gold-rgb), 0.14);
+}
+
+.blobAqua {
+  right: 40px;
+  bottom: 180px;
+  width: 120px;
+  height: 120px;
+  background: rgba(var(--accent-cyan-rgb), 0.2);
+}
+
+.brandLogo :global(.software-logo-mark),
+.mobileLogo :global(.software-logo-mark) {
+  width: 44px;
+  height: 44px;
+}
+
+.brandLogo :global(.software-logo-copy strong),
+.mobileLogo :global(.software-logo-copy strong) {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+}
+
+.brandBody {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.headline {
+  margin: 0 0 var(--space-3);
+  color: var(--color-heading-page);
+  font-size: 34px;
+  font-weight: var(--weight-semibold);
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.lead {
+  max-width: 420px;
+  margin: 0 0 var(--space-6);
+  color: var(--color-text-muted);
+  font-size: var(--text-md);
+  line-height: 1.6;
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  max-width: 460px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.featureCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+}
+
+.featureCard h3 {
+  margin: 0;
+  font-size: var(--text-base);
+}
+
+.chip {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-lg);
+}
+
+.green {
+  color: var(--color-success);
+  background: var(--color-success-soft);
+}
+
+.orange {
+  color: var(--color-warning);
+  background: var(--color-warning-soft);
+}
+
+/* Cobalt thương hiệu (thay cho tím) */
+.violet {
+  color: var(--color-primary-hover);
+  background: var(--color-primary-soft);
+}
+
+/* Navy đậm (thay cho hồng) */
+.magenta {
+  color: var(--brand-800);
+  background: var(--color-primary-soft-hover);
+}
+
+.aqua {
+  color: var(--color-info);
+  background: var(--color-info-soft);
+}
+
+/* Navy ink (thay cho đỏ — đây là tính năng, không phải cảnh báo) */
+.red {
+  color: var(--color-heading-item);
+  background: var(--color-surface-hover);
+}
+
+/* ───── Panel form ───── */
+.side {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+  padding: var(--space-6) 56px var(--space-4);
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  min-height: 34px;
+}
+
+.mobileLogo {
+  display: none;
+}
+
+.formWrap {
+  width: 100%;
+  max-width: 400px;
+  margin: auto;
+  padding-block: var(--space-4);
+}
+
+.title {
+  margin: 0 0 var(--space-2);
+  color: var(--color-heading-page);
+  font-size: 28px;
+  font-weight: var(--weight-semibold);
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin: 0 0 var(--space-6);
+  color: var(--color-text-muted);
+  font-size: var(--text-md);
+}
+
+.footer {
+  color: var(--color-text-subtle);
+  font-size: var(--text-xs);
+}
+
+@media (max-width: 1023px) {
+  .page {
+    grid-template-columns: 1fr;
+  }
+
+  .brand {
+    display: none;
+  }
+
+  .side {
+    padding: var(--space-5) var(--space-4) var(--space-4);
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .subtitle {
+    margin-bottom: var(--space-6);
+  }
+
+  .mobileLogo {
+    display: flex;
+  }
+
+  .mobileLogo :global(.software-logo-mark) {
+    width: 34px;
+    height: 34px;
+  }
+
+  .mobileLogo :global(.software-logo-copy strong) {
+    font-size: 18px;
+  }
+}
+
+/* Màn hình rất thấp: chỉ giữ logo, tiêu đề và mô tả */
+@media (min-width: 1024px) and (max-height: 600px) {
+  .featureGrid {
+    display: none;
+  }
+}

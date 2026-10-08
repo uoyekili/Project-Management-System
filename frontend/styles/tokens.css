@@ -1,0 +1,301 @@
+/* Design tokens — nguồn duy nhất cho màu, chữ, spacing, bo góc, đổ bóng. */
+:root {
+  color-scheme: light;
+
+  /* Typography */
+  --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --text-2xs: 0.6875rem; /* 11px — chỉ cho nhãn phụ rất nhỏ */
+  --text-xs: 0.75rem; /* 12px */
+  --text-sm: 0.8125rem; /* 13px */
+  --text-base: 0.875rem; /* 14px */
+  --text-md: 1rem; /* 16px */
+  --text-lg: 1.25rem; /* 20px */
+  --text-xl: 1.5rem; /* 24px */
+  --leading-xs: 1rem;
+  --leading-sm: 1.25rem;
+  --leading-base: 1.25rem;
+  --leading-md: 1.5rem;
+  --leading-lg: 1.75rem;
+  --leading-xl: 2rem;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* Spacing — bội số của 4px */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 999px;
+
+  /* Shadow — nhuốm navy của logo thay vì đen thuần */
+  --shadow-xs: 0 1px 2px rgba(var(--ink-rgb), 0.06);
+  --shadow-sm: 0 1px 3px rgba(var(--ink-rgb), 0.08), 0 1px 2px rgba(var(--ink-rgb), 0.04);
+  --shadow-md: 0 4px 12px rgba(var(--ink-rgb), 0.1);
+  --shadow-lg: 0 16px 40px rgba(var(--ink-rgb), 0.2);
+
+  /* Z-index */
+  --z-sticky: 10;
+  --z-dropdown: 100;
+  --z-modal: 200;
+  --z-toast: 300;
+
+  /* Layout */
+  --sidebar-width: 240px;
+  --sidebar-width-collapsed: 64px;
+  --topbar-height: 56px;
+  --content-padding: var(--space-4);
+  --row-height: 44px;
+  --row-height-compact: 36px;
+  --kanban-column-width: 288px;
+
+  /* ───────── Brand palette (lấy từ logo TaskFlow) ─────────
+   * Chỉ là thang màu thô. Component KHÔNG dùng trực tiếp --brand-* / --ink-* /
+   * --accent-*: hãy dùng token ngữ nghĩa bên dưới (--color-*, --sidebar-*, --chart-*).
+   */
+  --brand-50: #eef2ff;
+  --brand-100: #dfe7ff;
+  --brand-200: #c7d4fb;
+  --brand-300: #8fb0ff;
+  --brand-400: #6a95ff; /* đầu gradient logo */
+  --brand-500: #2f55e8; /* cobalt chính của logo */
+  --brand-600: #2442c9;
+  --brand-700: #1b2f9f; /* cuối gradient logo */
+  --brand-800: #14257a; /* navy tick trong logo */
+  --brand-900: #0c1745; /* navy sâu — nền sidebar */
+  --ink-900: #14213d; /* chữ "Task" trong logo */
+  --accent-cyan: #6fd6ff; /* đường cong logo */
+  --accent-gold: #ffb020; /* huy hiệu tick logo (giữa gradient vàng–cam) */
+
+  /* Dạng "r, g, b" để tạo alpha: rgba(var(--primary-rgb), 0.2) */
+  --primary-rgb: 47, 85, 232;
+  --ink-rgb: 20, 33, 61;
+  --slate-rgb: 107, 122, 153; /* #6b7a99 — chữ phụ của logo */
+  --accent-gold-rgb: 255, 176, 32;
+  --accent-cyan-rgb: 111, 214, 255;
+  --success-rgb: 14, 124, 90;
+  --warning-rgb: 180, 83, 9;
+  --danger-rgb: 185, 28, 28;
+
+  /* Nền, viền, chữ — neutral nhuốm navy cho đồng điệu với logo */
+  --color-bg: #f5f7fc;
+  --color-surface: #ffffff;
+  --color-surface-muted: #eff2fa;
+  --color-surface-hover: #e8ecf7;
+  --color-border: #e1e6f2;
+  --color-border-strong: #c8d0e3;
+  --color-text: var(--ink-900);
+  --color-text-muted: #4a5878;
+  --color-text-subtle: #5b6a8a;
+  --color-text-on-primary: #ffffff;
+  --color-track: rgba(var(--ink-rgb), 0.08); /* nền thanh tiến độ / track */
+  --color-scrollbar: rgba(var(--ink-rgb), 0.18);
+  --color-scrollbar-hover: rgba(var(--ink-rgb), 0.32);
+  --color-overlay: rgba(var(--ink-rgb), 0.55);
+
+  /* Hierarchy tiêu đề: navy sâu -> cobalt đậm -> ink. Mọi cấp ≥ 10:1 trên nền trắng */
+  --color-heading-page: var(--brand-800); /* H1 / tiêu đề trang */
+  --color-heading-section: var(--brand-700); /* H2 / tiêu đề section, card, modal */
+  --color-heading-item: var(--ink-900); /* H3 / tiêu đề phần tử, hàng, thẻ */
+  --color-eyebrow: var(--color-text-subtle); /* kicker, label nhỏ */
+
+  /* Màu nhấn chính (cobalt) */
+  --color-primary: var(--brand-500);
+  --color-primary-hover: var(--brand-600);
+  --color-primary-soft: var(--brand-50);
+  --color-primary-soft-hover: var(--brand-100);
+  --color-primary-border: var(--brand-200);
+  --color-primary-focus: rgba(var(--primary-rgb), 0.22);
+
+  /* Màu nhấn phụ: cyan (thông tin) và gold (điểm nhấn / cảnh báo) */
+  --color-accent: var(--accent-gold);
+  --color-info: #0a6c8f;
+  --color-info-soft: #e3f6fd;
+  --color-info-border: #a8e0f5;
+
+  /* Trạng thái hệ thống */
+  --color-success: #0e7c5a;
+  --color-success-soft: #e4f6ef;
+  --color-success-border: #b0e2cf;
+  --color-warning: #b45309;
+  --color-warning-soft: #fff3dc;
+  --color-warning-border: #f6d58f;
+  --color-danger: #b91c1c;
+  --color-danger-hover: #991b1b;
+  --color-danger-soft: #fdecee;
+  --color-danger-border: #f2bcc1;
+
+  /* Trạng thái công việc */
+  --status-todo: #4a5878;
+  --status-todo-soft: #eceff7;
+  --status-progress: var(--brand-600);
+  --status-progress-soft: #e8eeff;
+  --status-done: var(--color-success);
+  --status-done-soft: var(--color-success-soft);
+
+  /* Độ ưu tiên */
+  --priority-low: #4a5878;
+  --priority-low-soft: #eceff7;
+  --priority-medium: #a16207;
+  --priority-medium-soft: #fff3dc;
+  --priority-high: #c2410c;
+  --priority-high-soft: #ffeee2;
+  --priority-critical: #b91c1c;
+  --priority-critical-soft: #fdecee;
+
+  /* Biểu đồ — chuỗi màu phân loại (tối đa 5, thứ tự ưu tiên) */
+  --chart-1: var(--brand-500);
+  --chart-2: #1fa8d6;
+  --chart-3: var(--accent-gold);
+  --chart-4: var(--brand-400);
+  --chart-5: #8a97b8;
+
+  /* Sidebar — navy sâu của logo, nhấn bằng cyan + gold */
+  --sidebar-bg: #111a31; /* navy trầm, nhẹ hơn --brand-900 để không lấn át nội dung */
+  --sidebar-text: #b4bfdc;
+  --sidebar-text-muted: #8d9bbf;
+  --sidebar-text-strong: #ffffff;
+  --sidebar-hover: rgba(255, 255, 255, 0.05);
+  --sidebar-active: rgba(106, 149, 255, 0.12);
+  --sidebar-active-indicator: var(--accent-gold);
+  --sidebar-active-icon: var(--accent-cyan);
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-focus-ring: var(--accent-cyan);
+  --sidebar-brand-task: #ffffff;
+  --sidebar-brand-flow: var(--brand-300);
+
+  /* Logo wordmark (nền sáng) */
+  --logo-task: var(--ink-900);
+  --logo-flow: var(--brand-500);
+
+  /* Tooltip */
+  --tooltip-bg: var(--ink-900);
+  --tooltip-text: #ffffff;
+
+  /* Focus */
+  --focus-ring-color: var(--brand-500);
+  --focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px var(--brand-500);
+
+  /* Modal */
+  --modal-width-sm: 460px;
+  --modal-width-md: 580px;
+  --modal-width-lg: 760px;
+  --modal-width-xl: 960px;
+  --modal-width-2xl: 1080px;
+  --modal-radius: var(--radius-xl);
+  --modal-gap: var(--space-4);
+  --modal-header-padding: var(--space-5) var(--space-6) var(--space-4);
+  --modal-body-padding: var(--space-5) var(--space-6) var(--space-6);
+  --modal-footer-padding: var(--space-4) var(--space-6) var(--space-5);
+  --modal-card-padding: var(--space-4);
+  --modal-border: var(--color-border);
+  --modal-surface: var(--color-surface);
+  --modal-surface-alt: var(--color-surface-muted);
+  --modal-shadow: var(--shadow-lg);
+
+  /* Bảng */
+  --table-font-size: var(--text-sm);
+  --table-header-font-size: var(--text-xs);
+  --table-line-height: var(--leading-sm);
+  --table-pill-font-size: var(--text-xs);
+  --filtered-list-gap: var(--space-3);
+  --page-header-gap: var(--space-5);
+  /* Khoảng cách giữa thanh tiêu đề (topbar) và nội dung bên dưới. */
+  --header-content-gap: var(--content-padding); /* bằng lề trái/phải */
+}
+
+/* ───────── Theme tối ─────────
+ * Chỉ ghi đè token ngữ nghĩa; component không cần biết theme. Kích hoạt bằng data-theme="dark"
+ * trên <html> (xem lib/preferences/theme.ts).
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --ink-rgb: 226, 232, 248; /* "mực" đảo sang sáng để các lớp phủ rgba(var(--ink-rgb), …) vẫn là tint nhẹ */
+  --slate-rgb: 150, 164, 196;
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.6);
+
+  --color-bg: #0c111e;
+  --color-surface: #141b2d;
+  --color-surface-muted: #19223a;
+  --color-surface-hover: #212b47;
+  --color-border: #263050;
+  --color-border-strong: #38446a;
+  --color-text: #e4e9f6;
+  --color-text-muted: #aab4d0;
+  --color-text-subtle: #8f9bbd;
+  --color-text-on-primary: #ffffff;
+  --color-track: rgba(255, 255, 255, 0.1);
+  --color-scrollbar: rgba(255, 255, 255, 0.2);
+  --color-scrollbar-hover: rgba(255, 255, 255, 0.34);
+  --color-overlay: rgba(4, 7, 15, 0.7);
+
+  --color-heading-page: #f1f4fc;
+  --color-heading-section: #dbe3fb;
+  --color-heading-item: #e4e9f6;
+  --color-eyebrow: var(--color-text-subtle);
+
+  --color-primary: #4b6ff0;
+  --color-primary-hover: #6385f5;
+  --color-primary-soft: rgba(106, 149, 255, 0.14);
+  --color-primary-soft-hover: rgba(106, 149, 255, 0.22);
+  --color-primary-border: rgba(106, 149, 255, 0.38);
+  --color-primary-focus: rgba(106, 149, 255, 0.35);
+
+  --color-info: #4cc2ec;
+  --color-info-soft: rgba(76, 194, 236, 0.14);
+  --color-info-border: rgba(76, 194, 236, 0.38);
+  --color-success: #3fc794;
+  --color-success-soft: rgba(63, 199, 148, 0.14);
+  --color-success-border: rgba(63, 199, 148, 0.38);
+  --color-warning: #f0a752;
+  --color-warning-soft: rgba(240, 167, 82, 0.14);
+  --color-warning-border: rgba(240, 167, 82, 0.38);
+  --color-danger: #f27575;
+  --color-danger-hover: #f79393;
+  --color-danger-soft: rgba(242, 117, 117, 0.14);
+  --color-danger-border: rgba(242, 117, 117, 0.38);
+
+  --status-todo: #9aa7c7;
+  --status-todo-soft: rgba(154, 167, 199, 0.14);
+  --status-progress: #7fa3ff;
+  --status-progress-soft: rgba(127, 163, 255, 0.16);
+
+  --priority-low: #9aa7c7;
+  --priority-low-soft: rgba(154, 167, 199, 0.14);
+  --priority-medium: #e3b341;
+  --priority-medium-soft: rgba(227, 179, 65, 0.14);
+  --priority-high: #f09a62;
+  --priority-high-soft: rgba(240, 154, 98, 0.14);
+  --priority-critical: #f27575;
+  --priority-critical-soft: rgba(242, 117, 117, 0.14);
+
+  --chart-5: #6f7da3;
+
+  --sidebar-bg: #080c18;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+
+  --tooltip-bg: #2d3a5e;
+
+  --logo-task: #f1f4fc;
+  --logo-flow: #7fa3ff;
+
+  --focus-ring-color: #7fa3ff;
+  --focus-ring: 0 0 0 2px var(--color-surface), 0 0 0 4px #7fa3ff;
+}
