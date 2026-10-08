@@ -35,7 +35,8 @@ COPY --chown=appuser:appuser alembic ./alembic
 COPY --chown=appuser:appuser scripts ./scripts
 COPY --chown=appuser:appuser alembic.ini pyproject.toml README.md ./
 COPY --chown=appuser:appuser scripts/docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh /app/scripts/migrate_db.py
+RUN sed -i 's/\r$//' /docker-entrypoint.sh /app/scripts/migrate_db.py \
+    && chmod +x /docker-entrypoint.sh /app/scripts/migrate_db.py
 
 USER appuser
 
