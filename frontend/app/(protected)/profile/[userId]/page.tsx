@@ -82,13 +82,13 @@ export default function ProfilePage() {
             description={t("Nhân sự không tồn tại hoặc đã bị xóa.")}
           />
         ) : (
-          <div className={styles.layout}>
+          <>
             <ProfileHeader user={user} isSelf={isSelf} onUpdate={handleUpdate} />
-            <div className={styles.content}>
+            <div className={styles.cards}>
               <ProfileWork user={user} />
               <ProfileContact user={user} isSelf={isSelf} onUpdate={handleUpdate} />
             </div>
-          </div>
+          </>
         )}
       </div>
     </WorkspaceShell>

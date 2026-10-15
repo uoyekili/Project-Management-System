@@ -182,6 +182,13 @@
   backdrop-filter: none;
 }
 
+/* Topbar là stacking context (z-index 50) nên popup bên trong luôn thấp hơn các menu/tooltip
+   portal ra body (filter-popover, select-menu 10000, tooltip Gantt 11000). Khi popup topbar
+   đang mở thì nâng cả topbar lên trên chúng; đóng lại thì về mức cũ để modal vẫn phủ topbar. */
+:is(.workspace-main, .app-shell) .topbar:has(.popover, .profile-menu) {
+  z-index: 12000;
+}
+
 .popover-notifications {
   width: 340px;
   max-width: calc(100vw - 32px);
@@ -2225,13 +2232,17 @@ input[type="radio"]:focus-visible {
   outline-offset: 2px;
 }
 
-/* Thêm: nhấn nhẹ bằng màu chủ đạo nhưng không đặc. */
-.action-button-add {
+/* Thêm / Lưu: nhấn nhẹ bằng màu chủ đạo nhưng không đặc. (Hủy dùng tông trung tính mặc định.) */
+.action-button-add,
+.action-button-save,
+.action-button-open {
   border-color: color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
   color: var(--color-primary);
 }
 
-.action-button-add svg {
+.action-button-add svg,
+.action-button-save svg,
+.action-button-open svg {
   color: currentColor;
 }
 

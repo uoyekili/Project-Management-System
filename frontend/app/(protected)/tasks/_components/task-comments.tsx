@@ -12,6 +12,8 @@ import { t } from "@/lib/i18n";
 
 const MENTION_PATTERN = /@\[([^\]]{1,100})\]\((usr-\d+)\)/g;
 const MAX_SUGGESTIONS = 6;
+/** Số bình luận mới nhất hiển thị mặc định; phần cũ hơn mở bằng "Xem bình luận trước đó". */
+const VISIBLE_COMMENTS = 10;
 
 interface Mention {
   id: string;
@@ -26,6 +28,8 @@ interface TaskCommentsProps {
   mentionableUsers: UserProfile[];
   viewer: UserProfile;
   canManage: boolean;
+  /** Báo số bình luận cho nơi hiển thị tiêu đề. */
+  onCountChange?: (count: number) => void;
 }
 
 function escapeRegExp(value: string) {
@@ -53,12 +57,15 @@ function renderHighlighted(text: string, mentions: Mention[]): ReactNode {
   );
 }
 
+/** Cũ nhất ở trên, mới nhất ở dưới (như khung chat). */
+function sortOldestFirst(items: TaskComment[]) {
+  return [...items].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
+}
+
 function normalize(text: string) {
-  return text
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/đ/gi, "d")
-    .toLowerCase();
+  return text.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/gi, "d").toLowerCase();
 }
 
 /** Chuyển `@Tên` trong ô nhập thành `@[Tên](usr-id)` để lưu. */
@@ -78,6 +85,7 @@ export function TaskComments({
   mentionableUsers,
   viewer,
   canManage,
+  onCountChange,
 }: TaskCommentsProps) {
   const { confirm, alert } = useConfirmDialog();
   const [comments, setComments] = useState<TaskComment[]>([]);
@@ -88,6 +96,34 @@ export function TaskComments({
   const [query, setQuery] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [showAll, setShowAll] = useState(false);
+
+  useEffect(() => {
+    onCountChange?.(comments.length);
+  }, [comments.length, onCountChange]);
+
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+  const [editMentions, setEditMentions] = useState<Mention[]>([]);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  // Đóng menu "…" khi click ra ngoài hoặc nhấn Esc.
+  useEffect(() => {
+    if (openMenuId === null) return;
+    function handlePointerDown(event: MouseEvent) {
+      if (!(event.target as Element).closest("[data-comment-menu]")) setOpenMenuId(null);
+    }
+    function handleKeyDown(event: globalThis.KeyboardEvent) {
+      if (event.key === "Escape") setOpenMenuId(null);
+    }
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [openMenuId]);
   useEffect(() => {
     let isCancelled = false;
 
@@ -97,7 +133,7 @@ export function TaskComments({
         .listComments(taskId)
         .then((response) => {
           if (isCancelled) return;
-          setComments(response.data);
+          setComments(sortOldestFirst(response.data));
         })
         .catch(() => undefined)
         .finally(() => {
@@ -169,6 +205,11 @@ export function TaskComments({
       setQuery(null);
       return;
     }
+    // Ctrl/Cmd + Enter để gửi nhanh.
+    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+      event.preventDefault();
+      void submit();
+    }
   }
 
   async function submit() {
@@ -178,7 +219,7 @@ export function TaskComments({
     setIsSending(true);
     try {
       const response = await taskApi.addComment(taskId, content);
-      setComments((current) => [response.data, ...current]);
+      setComments((current) => [...current, response.data]);
       setText("");
       setMentions([]);
       setQuery(null);
@@ -212,6 +253,53 @@ export function TaskComments({
     }
   }
 
+  const hiddenCount = Math.max(0, comments.length - VISIBLE_COMMENTS);
+  const visibleComments =
+    showAll || hiddenCount === 0 ? comments : comments.slice(-VISIBLE_COMMENTS);
+
+  function startEdit(comment: TaskComment) {
+    const found: Mention[] = [];
+    const plain = comment.content.replace(
+      MENTION_PATTERN,
+      (_raw, fallbackName: string, id: string) => {
+        const name = users.find((user) => user.id === id)?.name ?? fallbackName;
+        if (!found.some((mention) => mention.id === id)) found.push({ id, name });
+        return `@${name}`;
+      },
+    );
+    setEditMentions(found);
+    setEditText(plain);
+    setEditingId(comment.id);
+    setOpenMenuId(null);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditText("");
+    setEditMentions([]);
+  }
+
+  async function saveEdit(comment: TaskComment) {
+    const content = serializeMentions(editText, editMentions);
+    if (!content || isSavingEdit) return;
+
+    setIsSavingEdit(true);
+    try {
+      const response = await taskApi.updateComment(taskId, comment.id, content);
+      setComments((current) =>
+        current.map((item) => (item.id === comment.id ? response.data : item)),
+      );
+      cancelEdit();
+    } catch (error: unknown) {
+      await alert({
+        title: t("Không thể sửa bình luận"),
+        message: error instanceof Error ? error.message : t("Đã có lỗi xảy ra."),
+      });
+    } finally {
+      setIsSavingEdit(false);
+    }
+  }
+
   function renderContent(content: string): ReactNode {
     const parts: ReactNode[] = [];
     let lastIndex = 0;
@@ -236,34 +324,171 @@ export function TaskComments({
 
   return (
     <div className={styles.root}>
+      {isLoading ? (
+        <LoadingState variant="cards" />
+      ) : comments.length === 0 ? null : (
+        <>
+          {hiddenCount > 0 ? (
+            <button
+              type="button"
+              className={styles.showPrevious}
+              onClick={() => setShowAll((current) => !current)}
+            >
+              {showAll
+                ? t("Thu gọn bình luận cũ")
+                : t("Xem {v0} bình luận trước đó", { v0: hiddenCount })}
+            </button>
+          ) : null}
+          <ul className={styles.list}>
+            {visibleComments.map((comment) => {
+              const author = users.find((user) => user.id === comment.userId);
+              const canEdit = comment.userId === viewer.id;
+              const canDelete = comment.userId === viewer.id || canManage;
+              const isEditing = editingId === comment.id;
+              return (
+                <li key={comment.id} className={styles.item}>
+                  <UserAvatar name={comment.userName} avatarUrl={author?.avatarUrl} size={32} />
+                  <div className={styles.itemBody}>
+                    <div className={styles.itemHead}>
+                      <strong>{author?.name ?? comment.userName}</strong>
+                      <span className={styles.time}>{formatDateTime(comment.createdAt)}</span>
+                      {(canEdit || canDelete) && !isEditing ? (
+                        <div className={styles.menuWrap} data-comment-menu>
+                          <button
+                            type="button"
+                            className={styles.menuButton}
+                            aria-label={t("Tuỳ chọn")}
+                            aria-haspopup="menu"
+                            aria-expanded={openMenuId === comment.id}
+                            onClick={() =>
+                              setOpenMenuId((current) =>
+                                current === comment.id ? null : comment.id,
+                              )
+                            }
+                          >
+                            …
+                          </button>
+                          {openMenuId === comment.id ? (
+                            <div className={styles.menu} role="menu">
+                              {canEdit ? (
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  className={styles.menuItem}
+                                  onClick={() => startEdit(comment)}
+                                >
+                                  {t("Chỉnh sửa")}
+                                </button>
+                              ) : null}
+                              {canDelete ? (
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  className={`${styles.menuItem} ${styles.menuItemDanger}`}
+                                  onClick={() => {
+                                    setOpenMenuId(null);
+                                    void remove(comment);
+                                  }}
+                                >
+                                  {t("Xoá")}
+                                </button>
+                              ) : null}
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
+                    {isEditing ? (
+                      <div className={styles.editBox}>
+                        <textarea
+                          className={`app-input ${styles.editTextarea}`}
+                          aria-label={t("Chỉnh sửa bình luận")}
+                          value={editText}
+                          rows={3}
+                          autoFocus
+                          disabled={isSavingEdit}
+                          onChange={(event) => setEditText(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Escape") cancelEdit();
+                          }}
+                        />
+                        <div className={styles.editActions}>
+                          <button
+                            type="button"
+                            className="secondary-button"
+                            onClick={cancelEdit}
+                            disabled={isSavingEdit}
+                          >
+                            {t("Huỷ")}
+                          </button>
+                          <button
+                            type="button"
+                            className="primary-button"
+                            onClick={() => void saveEdit(comment)}
+                            disabled={isSavingEdit || !editText.trim()}
+                          >
+                            {isSavingEdit ? t("Đang lưu...") : t("Lưu")}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className={styles.content}>{renderContent(comment.content)}</p>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
+
       <div className={styles.composer}>
-        <UserAvatar
-          name={viewer.name}
-          avatarUrl={viewer.avatarUrl}
-          size={32}
-        />
+        <UserAvatar name={viewer.name} avatarUrl={viewer.avatarUrl} size={32} />
         <div className={styles.composerBody}>
           <div className={styles.editor}>
             <div className={styles.highlight} aria-hidden="true">
               {renderHighlighted(text, mentions)}
               {"\n"}
             </div>
-          <textarea
-            ref={textareaRef}
-            className={`app-input ${styles.textarea}`}
-            aria-label={t("Viết bình luận")}
-            placeholder={t("Viết bình luận...")}
-            value={text}
-            rows={3}
-            disabled={isSending}
-            onChange={(event) => {
-              setText(event.target.value);
-              updateQuery(event.target.value, event.target.selectionStart);
-            }}
-            onKeyDown={handleKeyDown}
-            onClick={(event) => updateQuery(text, event.currentTarget.selectionStart)}
-            onBlur={() => setTimeout(() => setQuery(null), 120)}
-          />
+            <textarea
+              ref={textareaRef}
+              className={`app-input ${styles.textarea}`}
+              aria-label={t("Viết bình luận")}
+              placeholder={t("Viết bình luận...")}
+              value={text}
+              rows={3}
+              disabled={isSending}
+              onChange={(event) => {
+                setText(event.target.value);
+                updateQuery(event.target.value, event.target.selectionStart);
+              }}
+              onKeyDown={handleKeyDown}
+              onClick={(event) => updateQuery(text, event.currentTarget.selectionStart)}
+              onBlur={() => setTimeout(() => setQuery(null), 120)}
+            />
+            <button
+              type="button"
+              className={styles.sendButton}
+              onClick={() => void submit()}
+              disabled={isSending || !text.trim()}
+              aria-label={t("Gửi bình luận")}
+              title={`${t("Gửi bình luận")} (Ctrl+Enter)`}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m22 2-7 20-4-9-9-4Z" />
+                <path d="M22 2 11 13" />
+              </svg>
+            </button>
             {query !== null ? (
               <ul className={styles.suggestions} role="listbox" aria-label={t("Gợi ý thành viên")}>
                 {suggestions.length > 0 ? (
@@ -278,11 +503,7 @@ export function TaskComments({
                         pickSuggestion(user);
                       }}
                     >
-                      <UserAvatar
-                        name={user.name}
-                        avatarUrl={user.avatarUrl}
-                        size={24}
-                      />
+                      <UserAvatar name={user.name} avatarUrl={user.avatarUrl} size={24} />
                       <span>{user.name}</span>
                     </li>
                   ))
@@ -292,53 +513,8 @@ export function TaskComments({
               </ul>
             ) : null}
           </div>
-          <div className={styles.composerFooter}>
-            <button
-              type="button"
-              className="primary-button"
-              onClick={() => void submit()}
-              disabled={isSending || !text.trim()}
-            >
-              {isSending ? t("Đang gửi...") : t("Gửi bình luận")}
-            </button>
-          </div>
         </div>
       </div>
-
-      {isLoading ? (
-        <LoadingState variant="cards" />
-      ) : comments.length === 0 ? null : (
-        <ul className={styles.list}>
-          {comments.map((comment) => {
-            const author = users.find((user) => user.id === comment.userId);
-            const canDelete = comment.userId === viewer.id || canManage;
-            return (
-              <li key={comment.id} className={styles.item}>
-                <UserAvatar
-                  name={comment.userName}
-                  avatarUrl={author?.avatarUrl}
-                  size={32}
-                />
-                <div className={styles.itemBody}>
-                  <div className={styles.itemHead}>
-                    <strong>{author?.name ?? comment.userName}</strong>
-                    <span className={styles.time}>{formatDateTime(comment.createdAt)}</span>
-                    {canDelete ? (
-                      <button
-                        type="button"
-                        className={styles.deleteLink}
-                        onClick={() => void remove(comment)}
-                      >
-                        {t("Xoá")}</button>
-                    ) : null}
-                  </div>
-                  <p className={styles.content}>{renderContent(comment.content)}</p>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
     </div>
   );
 }

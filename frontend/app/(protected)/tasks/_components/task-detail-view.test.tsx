@@ -71,10 +71,10 @@ describe("TaskDetailView edit mode", () => {
     jest.clearAllMocks();
   });
 
-  function renderView() {
+  function renderView(fromProject = false) {
     return render(
       <ConfirmDialogProvider>
-        <TaskDetailView taskId={task.id} users={[]} viewer={viewer} />
+        <TaskDetailView taskId={task.id} users={[]} viewer={viewer} fromProject={fromProject} />
       </ConfirmDialogProvider>,
     );
   }
@@ -106,5 +106,74 @@ describe("TaskDetailView edit mode", () => {
     expect(taskApi.update).toHaveBeenCalledWith(task.id, {
       estimateHours: 7,
     });
+  });
+
+  it("shows logwork and comments together without tabs", async () => {
+    renderView();
+
+    expect(await screen.findByRole("heading", { name: /Logwork/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Bình luận/ })).toBeInTheDocument();
+    expect(screen.queryByRole("tab")).not.toBeInTheDocument();
+  });
+
+  it("explains that hours roll up and hides the logwork button on a parent task", async () => {
+    jest.mocked(taskApi.getEnrichedTask).mockResolvedValue({
+      data: {
+        ...task,
+        hasChildren: true,
+        project: {
+          id: "10",
+          managerId: "usr-1",
+          memberIds: ["usr-1"],
+          myPermissions: ["task.update:PROJECT", "logwork.create:OWN"],
+        },
+      },
+    } as never);
+    renderView();
+
+    expect(await screen.findByText(/Task này đã được chia nhỏ/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /\+ Logwork/ })).not.toBeInTheDocument();
+  });
+
+  it("shows the project shortcut only when not opened from a project", async () => {
+    const { unmount } = renderView();
+    expect(await screen.findByRole("button", { name: /Đi tới dự án/ })).toBeInTheDocument();
+    unmount();
+
+    renderView(true);
+    await screen.findByText("Kiểm tra debounce ET");
+    expect(screen.queryByRole("button", { name: /Đi tới dự án/ })).not.toBeInTheDocument();
+  });
+
+  it("collapses long logwork and comment lists behind a show-more control", async () => {
+    const logworks = Array.from({ length: 10 }, (_, index) => ({
+      id: `lw-${index}`,
+      taskId: task.id,
+      userId: "usr-1",
+      userName: "Nhân sự",
+      title: `Logwork ${index}`,
+      workContent: "",
+      hoursSpent: 1,
+      status: "APPROVED",
+      createdAt: "2026-08-11T00:00:00Z",
+    }));
+    const comments = Array.from({ length: 12 }, (_, index) => ({
+      id: `c-${index}`,
+      taskId: task.id,
+      userId: "usr-1",
+      userName: "Nhân sự",
+      content: `Bình luận ${index}`,
+      createdAt: `2026-08-11T00:${String(index).padStart(2, "0")}:00Z`,
+    }));
+    jest.mocked(taskApi.listLogworks).mockResolvedValue({ data: logworks } as never);
+    jest.mocked(taskApi.listComments).mockResolvedValue({ data: comments } as never);
+    renderView();
+
+    fireEvent.click(await screen.findByRole("button", { name: /Xem tất cả \(10\)/ }));
+    expect(await screen.findByText("Logwork 9")).toBeInTheDocument();
+
+    expect(await screen.findByRole("button", { name: /2 bình luận trước đó/ })).toBeInTheDocument();
+    expect(screen.queryByText("Bình luận 0")).not.toBeInTheDocument();
+    expect(screen.getByText("Bình luận 11")).toBeInTheDocument();
   });
 });

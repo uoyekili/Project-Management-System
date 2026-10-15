@@ -1,37 +1,35 @@
-/* Hồ sơ — cột danh tính bên trái, nội dung bên phải; dùng chung cho hồ sơ cá nhân và của người khác. */
+/* Hồ sơ — banner danh tính full-width, bên dưới là lưới card tự co giãn; dùng chung cho hồ sơ cá nhân và của người khác. */
 .page {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   width: 100%;
-  max-width: 1200px;
+  max-width: 1440px;
+  margin-inline: auto;
 }
 
 .backButton {
   align-self: flex-start;
 }
 
-.layout {
-  display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
-  gap: var(--space-4);
-  align-items: start;
-}
-
-.identity {
+/* Banner: avatar | tên + chức danh + vai trò | nút đổi ảnh */
+.banner {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-6) var(--space-5);
-  text-align: center;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-6);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
 }
 
-.identity > :first-child {
-  margin-bottom: var(--space-3);
+.identity {
+  display: flex;
+  flex: 1 1 280px;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
 }
 
 .name {
@@ -52,40 +50,32 @@
 .badges {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   gap: var(--space-2);
   margin-top: var(--space-1);
 }
 
 .notice {
-  align-self: stretch;
-  margin: var(--space-3) 0 0;
+  flex: 1 0 100%;
+  margin: 0;
   font-size: var(--text-sm);
 }
 
 .identityActions {
-  align-self: stretch;
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: var(--space-2);
-  margin-top: var(--space-5);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--color-border);
-}
-
-.identityActions > button {
-  width: 100%;
 }
 
 .hiddenFileInput {
   display: none;
 }
 
-.content {
-  display: flex;
-  flex-direction: column;
+/* Hai card cạnh nhau, tự xuống hàng khi hẹp */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr));
   gap: var(--space-4);
-  min-width: 0;
+  align-items: start;
 }
 
 .card {
@@ -232,13 +222,28 @@
   color: var(--color-danger);
 }
 
-@media (max-width: 900px) {
-  .layout {
-    grid-template-columns: minmax(0, 1fr);
+@media (max-width: 720px) {
+  .banner {
+    flex-direction: column;
+    padding: var(--space-5);
+    text-align: center;
+  }
+
+  .identity {
+    flex-basis: auto;
+    align-items: center;
+  }
+
+  .badges {
+    justify-content: center;
+  }
+
+  .identityActions {
+    justify-content: center;
   }
 }
 
-@media (max-width: 560px) {
+@media (max-width: 480px) {
   .fields {
     grid-template-columns: minmax(0, 1fr);
   }

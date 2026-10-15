@@ -27,8 +27,6 @@ interface TaskCreateViewProps {
 export function TaskCreateView({ projectId, parentTaskId, users, viewer }: TaskCreateViewProps) {
   const router = useRouter();
   const { alert } = useConfirmDialog();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState(projectId);
   const [project, setProject] = useState<Project | null>(null);
   const [projectTasks, setProjectTasks] = useState<EnrichedTask[]>([]);
   const [draft, setDraft] = useState<TaskDraft>(EMPTY_TASK_DRAFT);
@@ -36,21 +34,13 @@ export function TaskCreateView({ projectId, parentTaskId, users, viewer }: TaskC
   const isFirstLoadRef = useRef(true);
 
   useEffect(() => {
-    projectApi
-      .list(undefined, viewer)
-      .then(({ data }) => setProjects(data))
-      .catch(() => setProjects([]));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewer.id]);
-
-  useEffect(() => {
     let isCancelled = false;
 
     async function load() {
       try {
         const [{ data: nextProject }, { data: tasks }] = await Promise.all([
-          projectApi.get(selectedProjectId, viewer),
-          taskApi.getEnrichedBoard({ projectId: selectedProjectId }, viewer, { users }),
+          projectApi.get(projectId, viewer),
+          taskApi.getEnrichedBoard({ projectId }, viewer, { users }),
         ]);
         if (isCancelled) return;
 
@@ -62,7 +52,6 @@ export function TaskCreateView({ projectId, parentTaskId, users, viewer }: TaskC
 
         setProject(nextProject);
         setProjectTasks(tasks);
-        // Đổi dự án thì người thực hiện và task cha của dự án cũ không còn hợp lệ.
         setDraft((current) => ({
           ...current,
           assigneeIds: [],
@@ -83,13 +72,13 @@ export function TaskCreateView({ projectId, parentTaskId, users, viewer }: TaskC
       isCancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedProjectId, parentTaskId, viewer.id]);
+  }, [projectId, parentTaskId, viewer.id]);
 
   function handleBack() {
     if (window.history.length > 1) {
       router.back();
     } else {
-      router.push(`/projects/${selectedProjectId}`);
+      router.push(`/projects/${projectId}`);
     }
   }
 
@@ -98,7 +87,7 @@ export function TaskCreateView({ projectId, parentTaskId, users, viewer }: TaskC
   );
   const canSubmit =
     Boolean(project) &&
-    project?.id === selectedProjectId &&
+    project?.id === projectId &&
     draft.title.trim() !== "" &&
     draft.startDate !== "" &&
     draft.dueDate !== "" &&
@@ -184,12 +173,6 @@ export function TaskCreateView({ projectId, parentTaskId, users, viewer }: TaskC
       (canCreateForOthers || user.id === viewer.id) &&
       (!parentTask || parentAssigneeIds.includes(user.id)),
   );
-  const projectOptions = (projects.length ? projects : [project]).map((item) => ({
-    value: item.id,
-    label: item.name,
-    meta: item.code,
-  }));
-
   return (
     <div className={styles.page}>
       <div className={styles.topRow}>
@@ -263,13 +246,9 @@ export function TaskCreateView({ projectId, parentTaskId, users, viewer }: TaskC
               <>
                 <div className={`${styles.prop} ${styles.propFull}`}>
                   <span className={styles.propLabel}>{t("Dự án")}</span>
-                  <SearchSelect
-                    ariaLabel={t("Dự án")}
-                    value={selectedProjectId}
-                    onChange={(next) => next && setSelectedProjectId(next)}
-                    disabled={isSaving}
-                    options={projectOptions}
-                  />
+                  <span className={styles.propValue}>
+                    {project ? (project.code ? `${project.code} - ${project.name}` : project.name) : ""}
+                  </span>
                 </div>
                 {!isAgile ? (
                   <div className={`${styles.prop} ${styles.propFull}`}>

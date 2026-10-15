@@ -49,7 +49,7 @@ export function WbsTree({ tasks }: WbsTreeProps) {
   };
 
   const handleRowClick = (taskId: string) => {
-    router.push(`/tasks/${taskId}`);
+    router.push(`/tasks/${taskId}?from=project`);
   };
 
   const renderTree = (nodes: WbsNode[], isRoot = false): React.ReactNode => {

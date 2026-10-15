@@ -1,5 +1,6 @@
 "use client";
 
+import { formatEmployeeCode } from "@/lib/utils/employee";
 import { useEffect, useRef, useState } from "react";
 import { UserAvatar } from "@/components/user-avatar";
 import type { UserProfile } from "@/types";
@@ -81,7 +82,7 @@ export function AssigneeSelect({
                 style={{ flexShrink: 0 }}
               />
               <span className="cell-truncate">
-                {selectedOption.name} - {selectedOption.employeeCode || (selectedOption.id.startsWith("usr-") ? selectedOption.id : `usr-${selectedOption.id}`)}
+                {selectedOption.name} - {formatEmployeeCode(selectedOption.id, selectedOption.employeeCode)}
               </span>
             </div>
           ) : (
@@ -171,7 +172,7 @@ export function AssigneeSelect({
                 <div className="select-option-copy">
                   <span className="select-option-title">{user.name}</span>
                   <span className="select-option-meta">
-                    {user.employeeCode || (user.id.startsWith("usr-") ? user.id : `usr-${user.id}`)}
+                    {formatEmployeeCode(user.id, user.employeeCode)}
                   </span>
                 </div>
               </li>

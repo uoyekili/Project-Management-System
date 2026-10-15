@@ -6,7 +6,6 @@ import {
   useState,
   useSyncExternalStore,
   useTransition,
-  type FocusEvent,
 } from "react";
 import { signIn, STORAGE_KEY } from "@/services/auth/session";
 import {
@@ -93,10 +92,6 @@ export function useLoginForm() {
     if (fieldErrors.password) updateFieldError("password", undefined);
   };
 
-  const handleFieldBlur = (field: LoginField) => (event: FocusEvent<HTMLInputElement>) => {
-    updateFieldError(field, validateField(field, event.target.value));
-  };
-
   const handleRememberChange = (checked: boolean) => {
     setRememberInput(checked);
     if (!checked) {
@@ -161,7 +156,6 @@ export function useLoginForm() {
     passwordRef,
     handleEmailChange,
     handlePasswordChange,
-    handleFieldBlur,
     handleRememberChange,
     togglePasswordVisibility,
     handleSubmit,

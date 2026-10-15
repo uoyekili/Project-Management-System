@@ -36,11 +36,11 @@ export function UserTable({
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th>{t("Người dùng")}</th>
                   <th>{t("Mã")}</th>
-                  <th>Email</th>
+                  <th>{t("Người dùng")}</th>
                   <th>{t("Chức danh")}</th>
-                  <th className={styles.roleCell}>{t("Vai trò")}</th>
+                  <th>Email</th>
+                  <th>{t("Vai trò")}</th>
                   <th>{t("Trạng thái")}</th>
                   <th>{t("Phòng ban")}</th>
                   <th>{t("Số điện thoại")}</th>
@@ -54,6 +54,7 @@ export function UserTable({
                   directory.items.map((user) => {
                   return (
                     <tr key={user.id}>
+                      <td>{formatEmployeeCode(user.id, user.employeeCode)}</td>
                       <td>
                         <button
                           type="button"
@@ -68,18 +69,16 @@ export function UserTable({
                           />
                           <span className={styles.userCellCopy}>
                             <strong>{user.name}</strong>
-                            <small>{user.jobTitle ?? user.title}</small>
                           </span>
                         </button>
                       </td>
-                      <td>{formatEmployeeCode(user.id, user.employeeCode)}</td>
+                      <td>{user.jobTitle}</td>
                       <td>
                         <div className={styles.contactCell}>
                           <span>{user.email}</span>
                         </div>
                       </td>
-                      <td>{user.jobTitle ?? t("Chưa có")}</td>
-                      <td className={styles.roleCell}>
+                      <td>
                         <RoleTags
                           className={styles.roleStack}
                           roles={user.roles?.length ? user.roles : user.role}
@@ -93,10 +92,10 @@ export function UserTable({
                       </td>
                       <td>
                         <div className={styles.contactCell}>
-                          <span>{user.department || t("Chưa có")}</span>
+                          <span>{user.department}</span>
                         </div>
                       </td>
-                      <td>{user.phoneNumber || t("Chưa có")}</td>
+                      <td>{user.phoneNumber}</td>
                       <td className={styles.actionCol}>
                         <button
                           type="button"

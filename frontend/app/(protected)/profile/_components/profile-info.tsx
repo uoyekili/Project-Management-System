@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 
-import { Surface } from "@/components/ui";
+import { RoleTags } from "@/components/role-tags";
+import { StatusPill, Surface } from "@/components/ui";
 import { t } from "@/lib/i18n";
-import { formatEmployeeCode } from "@/lib/utils/employee";
 import { userStatusLabel } from "@/lib/utils/format";
 import { userApi } from "@/services/api";
 import type { UserProfile, UserStatus } from "@/types";
@@ -38,11 +38,14 @@ export function ProfileWork({ user }: { user: UserProfile }) {
     <Surface className={styles.card}>
       <h3 className={styles.cardTitle}>{t("Thông tin công việc")}</h3>
       <dl className={styles.fields}>
-        <Field label={t("Mã nhân viên")}>{formatEmployeeCode(user.id, user.employeeCode)}</Field>
         <Field label={t("Chức danh")}>{user.jobTitle || NONE()}</Field>
         <Field label={t("Phòng ban")}>{user.department || NONE()}</Field>
-        <Field label={t("Vai trò hệ thống")}>{user.role || NONE()}</Field>
-        <Field label={t("Trạng thái")}>{userStatusLabel(status)}</Field>
+        <Field label={t("Vai trò hệ thống")}>
+          {user.role ? <RoleTags roles={user.roles?.length ? user.roles : user.role} /> : NONE()}
+        </Field>
+        <Field label={t("Trạng thái")}>
+          <StatusPill label={userStatusLabel(status)} tone={status === "ACTIVE" ? "on-track" : "critical"} />
+        </Field>
       </dl>
     </Surface>
   );

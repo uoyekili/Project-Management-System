@@ -238,7 +238,7 @@ export default function ProjectDetailPage() {
     : false;
 
   function openTask(taskId: string) {
-    router.push(`/tasks/${taskId}`);
+    router.push(`/tasks/${taskId}?from=project`);
   }
 
   function handleTabChange(tab: ProjectDetailTab) {
@@ -280,7 +280,7 @@ export default function ProjectDetailPage() {
       subheading={state?.project.code ?? t("Đang tải dữ liệu...")}
       highlightLabel={t("Số lượng Task")}
       highlightValue={`${state?.tasks.length ?? 0}`}
-      fillViewport={activeTab === "gantt" || activeTab === "kanban"}
+      fillViewport
     >
       {error ? (
         <Surface title={t("Lỗi")}>
@@ -290,9 +290,11 @@ export default function ProjectDetailPage() {
         <div
           className="page-section-stack"
           style={{
-            flex: activeTab === "gantt" || activeTab === "kanban" ? 1 : undefined,
-            minHeight: activeTab === "gantt" || activeTab === "kanban" ? 0 : undefined,
-            overflow: activeTab === "gantt" ? "hidden" : undefined,
+            // Khung luôn vừa viewport: thanh section đứng yên, từng tab tự cuộn nội dung bên trong
+            // (tổng quan: cuộn vùng nội dung; thành viên: chỉ cuộn bảng; gantt/kanban tự quản lý).
+            flex: 1,
+            minHeight: 0,
+            overflow: activeTab === "gantt" || activeTab === "members" ? "hidden" : undefined,
             gap: activeTab === "gantt" ? 0 : undefined,
             // Gantt: kéo card sát đáy viewport hơn (bù bớt padding dưới của main)
             marginBottom:
@@ -335,6 +337,7 @@ export default function ProjectDetailPage() {
           ) : null}
 
           {activeTab === "overview" && (
+            <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden" }}>
             <ProjectOverview
               project={state?.project ?? null}
               tasks={state?.tasks ?? []}
@@ -347,6 +350,7 @@ export default function ProjectDetailPage() {
               }
               onOpenMembersTab={() => handleTabChange("members")}
             />
+            </div>
           )}
 
           {activeTab === "gantt" && (

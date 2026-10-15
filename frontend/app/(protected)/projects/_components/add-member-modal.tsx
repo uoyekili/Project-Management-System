@@ -300,8 +300,6 @@ export function AddMemberModal({
         </div>
 
         <footer className="app-modal-footer">
-          <button type="button" className="secondary-button" onClick={onClose}>
-            {t("Hủy")}</button>
           <button
             type="button"
             className="primary-button"

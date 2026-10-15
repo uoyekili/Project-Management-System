@@ -144,7 +144,7 @@
 }
 
 .kpiValue {
-  font-size: clamp(1.5rem, 2.2vw, 1.9rem);
+  font-size: calc(clamp(1.5rem, 2.2vw, 1.9rem) - 2px);
   font-weight: var(--weight-semibold);
   line-height: 1.15;
   font-variant-numeric: tabular-nums;
@@ -152,7 +152,7 @@
 }
 
 .kpiValue small {
-  font-size: var(--text-md);
+  font-size: calc(var(--text-md) - 2px);
   font-weight: var(--weight-regular);
   color: var(--color-text-subtle);
 }
@@ -1740,7 +1740,7 @@ button.legendItem:focus-visible {
 }
 
 .donutLayout .donutCenter strong {
-  font-size: clamp(1.75rem, 3.2vw, 2.25rem);
+  font-size: calc(clamp(1.75rem, 3.2vw, 2.25rem) - 4px);
   font-weight: var(--weight-semibold);
   color: var(--color-heading-section);
 }
@@ -1798,7 +1798,7 @@ button.legendItem:focus-visible {
 }
 
 .kpiLabel {
-  font-size: var(--text-xs);
+  font-size: calc(var(--text-xs) - 2px);
   font-weight: var(--weight-semibold);
   white-space: nowrap;
   overflow: hidden;
@@ -1806,7 +1806,7 @@ button.legendItem:focus-visible {
 }
 
 .kpiNote {
-  font-size: var(--text-sm);
+  font-size: calc(var(--text-sm) - 2px);
   line-height: 1.4;
   color: var(--color-text-muted);
 }
@@ -1860,4 +1860,41 @@ button.legendItem:focus-visible {
 
 .projectList .projectRow {
   margin-inline: calc((var(--space-2) + var(--space-1)) * -1) calc(var(--space-2) * -1);
+}
+
+/* Header card: tiêu đề không bị bóp thành nhiều dòng khi có bộ lọc dự án; bộ lọc tự co và cắt chữ */
+.cardTitle {
+  white-space: nowrap;
+}
+
+.cardAside {
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+  min-width: 0;
+  max-width: 55%;
+}
+
+.cardAside > * {
+  min-width: 0;
+}
+
+/* Tầng hành động: danh sách lấp đầy chiều cao card, không chừa khoảng trắng cuối card */
+.actionGrid > .card {
+  display: flex;
+  flex-direction: column;
+}
+
+.actionGrid > .card .scroll {
+  flex: 1 1 0;
+  min-height: 360px;
+  max-height: none;
+}
+
+.actionGrid .cardSub {
+  font-size: calc(var(--text-xs) - 1px);
+}
+
+/* Con số bên phải header căn giữa theo chiều dọc với khối tên + mô tả card */
+.actionGrid .cardHead {
+  align-items: center;
 }

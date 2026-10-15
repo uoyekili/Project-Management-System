@@ -121,15 +121,22 @@ export function LoadingState({
       case "dashboard":
         return (
           <div className={styles.dashboard} aria-hidden>
+            <Bone className={styles.dashHero} height={150} />
             <div className={styles.kpiRow}>
-              <Bone className={styles.kpi} height={78} />
-              <Bone className={styles.kpi} height={78} />
-              <Bone className={styles.kpi} height={78} />
-              <Bone className={styles.kpi} height={78} />
+              <Bone className={styles.kpi} height={86} />
+              <Bone className={styles.kpi} height={86} />
+              <Bone className={styles.kpi} height={86} />
+              <Bone className={styles.kpi} height={86} />
             </div>
             <div className={styles.dashGrid}>
-              <Bone className={styles.panel} height={220} />
-              <Bone className={styles.panel} height={220} />
+              <div className={styles.dashCol}>
+                <Bone className={styles.panel} height={300} />
+                <Bone className={styles.panel} height={200} />
+              </div>
+              <div className={styles.dashCol}>
+                <Bone className={styles.panel} height={220} />
+                <Bone className={styles.panel} height={200} />
+              </div>
             </div>
           </div>
         );
@@ -138,28 +145,54 @@ export function LoadingState({
           <div className={styles.profile} aria-hidden>
             <div className={styles.hero}>
               <Bone className={styles.avatar} height={72} width={72} radius="999px" />
-              <Bone height={16} width="60%" />
-              <Bone height={12} width="40%" />
+              <div className={styles.heroText}>
+                <Bone height={18} width="40%" />
+                <Bone height={12} width="28%" />
+              </div>
             </div>
-            <div className={styles.form}>
-              <Bone height={14} width="30%" />
-              <Bone height={38} />
-              <Bone height={14} width="30%" />
-              <Bone height={38} />
-              <Bone height={14} width="30%" />
-              <Bone height={38} />
+            <div className={styles.profileCards}>
+              <div className={styles.form}>
+                <Bone height={14} width="30%" />
+                <Bone height={38} />
+                <Bone height={14} width="30%" />
+                <Bone height={38} />
+                <Bone height={14} width="30%" />
+                <Bone height={38} />
+              </div>
+              <div className={styles.form}>
+                <Bone height={14} width="30%" />
+                <Bone height={38} />
+                <Bone height={14} width="30%" />
+                <Bone height={38} />
+              </div>
             </div>
           </div>
         );
       case "gantt":
         return (
           <div className={styles.gantt} aria-hidden>
-            {Array.from({ length: rows ?? 7 }, (_, index) => (
-              <div key={index} className={styles.ganttRow}>
-                <Bone height={16} width="80%" />
-                <Bone height={18} width={`${40 + ((index * 13) % 45)}%`} radius={999} />
-              </div>
-            ))}
+            <div className={styles.ganttPane}>
+              <Bone height={20} width="100%" />
+              {Array.from({ length: rows ?? 7 }, (_, index) => (
+                <div key={index} className={styles.ganttRow}>
+                  <Bone height={14} width={`${80 - ((index * 7) % 30)}%`} />
+                  <Bone height={22} width="70%" radius={999} />
+                </div>
+              ))}
+            </div>
+            <div className={styles.ganttPane}>
+              <Bone height={20} width="100%" />
+              {Array.from({ length: rows ?? 7 }, (_, index) => (
+                <div key={index} className={styles.ganttBarRow}>
+                  <Bone
+                    height={16}
+                    width={`${25 + ((index * 13) % 45)}%`}
+                    radius={999}
+                    className={styles.ganttBar}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         );
       default:

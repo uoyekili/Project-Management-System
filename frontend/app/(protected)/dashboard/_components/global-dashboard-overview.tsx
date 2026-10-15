@@ -107,13 +107,10 @@ export function GlobalDashboardOverview({ overview, isLoading = false }: GlobalD
           tasks={overview.overdueTasks}
           total={overview.taskSummary.overdue}
           project={focusProjectId}
-          onProjectChange={setFocusProjectId}
         />
-        <UpcomingList tasks={overview.upcomingDeadlines} project={focusProjectId} onProjectChange={setFocusProjectId} />
+        <UpcomingList tasks={overview.upcomingDeadlines} project={focusProjectId} />
         <LogworkActivity
           logworks={overview.recentLogworks}
-          pendingCount={overview.pendingLogworkCount}
-          pendingHours={overview.pendingLogworkHours}
         />
       </div>
     </div>

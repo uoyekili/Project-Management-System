@@ -234,11 +234,6 @@
   white-space: nowrap;
 }
 
-.roleCell {
-  width: 22%;
-  min-width: 9rem;
-}
-
 .roleStack {
   display: flex;
   flex-wrap: wrap;

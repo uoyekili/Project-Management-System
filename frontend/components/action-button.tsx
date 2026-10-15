@@ -1,9 +1,17 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-type Kind = "add" | "edit" | "delete";
+type Kind = "add" | "edit" | "delete" | "save" | "cancel" | "open";
 
 const ICONS: Record<Kind, ReactNode> = {
   add: <path d="M12 5v14M5 12h14" />,
+  open: (
+    <>
+      <path d="M7 17 17 7" />
+      <path d="M8 7h9v9" />
+    </>
+  ),
+  save: <path d="M20 6 9 17l-5-5" />,
+  cancel: <path d="M18 6 6 18M6 6l12 12" />,
   edit: (
     <>
       <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -20,7 +28,7 @@ const ICONS: Record<Kind, ReactNode> = {
   ),
 };
 
-/** Nút hành động có icon (thêm / chỉnh sửa / xóa): cùng kích thước nút quay lại, tông trung tính. */
+/** Nút hành động có icon (thêm / chỉnh sửa / xóa / lưu / hủy / mở): cùng kích thước nút quay lại, tông trung tính. */
 export function ActionButton({
   kind,
   children,

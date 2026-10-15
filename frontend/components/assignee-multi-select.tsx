@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { UserAvatar } from "@/components/user-avatar";
 import { t } from "@/lib/i18n";
+import { formatEmployeeCode } from "@/lib/utils/employee";
 import type { UserProfile } from "@/types";
 
 import styles from "./assignee-multi-select.module.css";
 
 interface AssigneeMultiSelectProps {
-  /** Id những người đã chọn (hiện thành chip trong ô chọn). */
+  /** Id những người đã chọn (hiện thành chip phía trên ô tìm kiếm). */
   value: string[];
   onChange: (value: string[]) => void;
   /** Người có thể chọn thêm. */
@@ -20,10 +21,9 @@ interface AssigneeMultiSelectProps {
   placeholder?: string;
 }
 
-const codeOf = (user: UserProfile) =>
-  user.employeeCode || (user.id.startsWith("usr-") ? user.id : `usr-${user.id}`);
+const codeOf = (user: UserProfile) => formatEmployeeCode(user.id, user.employeeCode);
 
-/** Chọn nhiều người: người đã chọn nằm trong ô dưới dạng chip có dấu × để bỏ. */
+/** Chọn nhiều người: người đã chọn hiển thị thành chip (có dấu × để bỏ), ô tìm kiếm nằm riêng bên dưới. */
 export function AssigneeMultiSelect({
   value,
   onChange,
@@ -36,6 +36,7 @@ export function AssigneeMultiSelect({
   const [query, setQuery] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listboxId = useId();
 
   useEffect(() => {
     function handleOutside(event: MouseEvent) {
@@ -55,7 +56,9 @@ export function AssigneeMultiSelect({
   const available = options.filter(
     (user) =>
       !value.includes(user.id) &&
-      (!needle || user.name.toLowerCase().includes(needle) || codeOf(user).toLowerCase().includes(needle)),
+      (!needle || user.name.toLowerCase().includes(needle) ||
+        codeOf(user).toLowerCase().includes(needle) ||
+        user.id.toLowerCase().includes(needle)),
   );
 
   const add = (id: string) => {
@@ -67,46 +70,49 @@ export function AssigneeMultiSelect({
 
   return (
     <div ref={rootRef} className={styles.root}>
-      <div
-        className={`${styles.control} ${isOpen ? styles.controlOpen : ""} ${disabled ? styles.controlDisabled : ""}`}
-        onClick={() => {
-          if (disabled) return;
-          setIsOpen(true);
-          inputRef.current?.focus();
-        }}
-      >
-        {value.map((id) => {
-          const user = lookup.get(id);
-          const name = user?.name ?? t("Người dùng");
-          return (
-            <span key={id} className={`${styles.chip} ${disabled ? styles.chipDisabled : ""}`}>
-              <UserAvatar name={name} avatarUrl={user?.avatarUrl} size={22} style={{ flexShrink: 0 }} />
-              <span className={styles.chipName}>{name}</span>
-              {!disabled ? (
-                <button
-                  type="button"
-                  className={styles.chipRemove}
-                  aria-label={t("Bỏ {v0}", { v0: name })}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    remove(id);
-                  }}
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-                    <path d="M6 6l12 12M18 6 6 18" />
-                  </svg>
-                </button>
-              ) : null}
-            </span>
-          );
-        })}
-        {!disabled ? (
+      {value.length > 0 ? (
+        <ul className={styles.chips} aria-label={t("Người đã chọn")}>
+          {value.map((id) => {
+            const user = lookup.get(id);
+            const name = user?.name ?? t("Người dùng");
+            return (
+              <li key={id} className={`${styles.chip} ${disabled ? styles.chipDisabled : ""}`}>
+                <UserAvatar name={name} avatarUrl={user?.avatarUrl} size={22} style={{ flexShrink: 0 }} />
+                <span className={styles.chipName}>{name}</span>
+                {!disabled ? (
+                  <button
+                    type="button"
+                    className={styles.chipRemove}
+                    aria-label={t("Bỏ {v0}", { v0: name })}
+                    onClick={() => remove(id)}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                      <path d="M6 6l12 12M18 6 6 18" />
+                    </svg>
+                  </button>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+
+      {!disabled ? (
+        <div className={styles.search}>
+          <svg className={styles.searchIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <path d="M20 20l-3.5-3.5" />
+          </svg>
           <input
             ref={inputRef}
             type="text"
-            className={styles.input}
+            role="combobox"
+            aria-expanded={isOpen}
+            aria-controls={listboxId}
+            aria-autocomplete="list"
+            className={`${styles.input} ${isOpen ? styles.inputOpen : ""}`}
             value={query}
-            placeholder={value.length === 0 ? placeholder : ""}
+            placeholder={placeholder}
             aria-label={placeholder}
             onFocus={() => setIsOpen(true)}
             onChange={(event) => {
@@ -123,32 +129,32 @@ export function AssigneeMultiSelect({
               }
             }}
           />
-        ) : null}
-      </div>
 
-      {isOpen && !disabled ? (
-        <ul className={styles.menu} role="listbox" aria-multiselectable="true">
-          {available.length > 0 ? (
-            available.map((user) => (
-              <li
-                key={user.id}
-                role="option"
-                aria-selected="false"
-                className={styles.option}
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => add(user.id)}
-              >
-                <UserAvatar name={user.name} avatarUrl={user.avatarUrl} size={28} style={{ flexShrink: 0 }} />
-                <span className={styles.optionCopy}>
-                  <span>{user.name}</span>
-                  <span className={styles.optionMeta}>{codeOf(user)}</span>
-                </span>
-              </li>
-            ))
-          ) : (
-            <li className={styles.empty}>{t("Không tìm thấy kết quả")}</li>
-          )}
-        </ul>
+          {isOpen ? (
+            <ul id={listboxId} className={styles.menu} role="listbox" aria-multiselectable="true">
+              {available.length > 0 ? (
+                available.map((user) => (
+                  <li
+                    key={user.id}
+                    role="option"
+                    aria-selected="false"
+                    className={styles.option}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => add(user.id)}
+                  >
+                    <UserAvatar name={user.name} avatarUrl={user.avatarUrl} size={28} style={{ flexShrink: 0 }} />
+                    <span className={styles.optionCopy}>
+                      <span>{user.name}</span>
+                      <span className={styles.optionMeta}>{codeOf(user)}</span>
+                    </span>
+                  </li>
+                ))
+              ) : (
+                <li className={styles.empty}>{t("Không tìm thấy kết quả")}</li>
+              )}
+            </ul>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ChangeEventHandler, FocusEventHandler, Ref } from "react";
+import type { ChangeEventHandler, Ref } from "react";
 
 import { EyeIcon, EyeOffIcon, LockIcon } from "./login-icons";
 import styles from "../styles/login-form.module.css";
@@ -9,7 +9,6 @@ type LoginPasswordInputProps = {
   id: string;
   value: string;
   onChange: ChangeEventHandler<HTMLInputElement>;
-  onBlur: FocusEventHandler<HTMLInputElement>;
   isVisible: boolean;
   onToggleVisibility: () => void;
   disabled?: boolean;
@@ -23,7 +22,6 @@ export function LoginPasswordInput({
   id,
   value,
   onChange,
-  onBlur,
   isVisible,
   onToggleVisibility,
   disabled,
@@ -42,7 +40,6 @@ export function LoginPasswordInput({
         className={`app-input ${styles.input}`}
         value={value}
         onChange={onChange}
-        onBlur={onBlur}
         disabled={disabled}
         type={isVisible ? "text" : "password"}
         autoComplete="current-password"

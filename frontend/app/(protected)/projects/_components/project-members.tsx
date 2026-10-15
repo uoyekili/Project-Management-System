@@ -7,7 +7,6 @@ import { TableBodySkeleton } from "@/components/loading-state";
 import { UserAvatar } from "@/components/user-avatar";
 import { formatEmployeeCode, matchesNameOrCode } from "@/lib/utils/employee";
 import { useConfirmDialog } from "@/components/confirm-dialog";
-import { TablePagination } from "@/components/table-pagination";
 import { projectApi } from "@/services/api";
 import {
   projectRoleLabel,
@@ -71,8 +70,6 @@ export function ProjectMembers({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [page, setPage] = useState(1);
-  const MEMBERS_PER_PAGE = 10;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string[]>([]);
@@ -188,14 +185,6 @@ export function ProjectMembers({
     return true;
   });
 
-  const totalPages = Math.max(1, Math.ceil(filteredMembers.length / MEMBERS_PER_PAGE));
-  const validPage = Math.min(page, totalPages);
-
-  const paginatedMembers = filteredMembers.slice(
-    (validPage - 1) * MEMBERS_PER_PAGE,
-    validPage * MEMBERS_PER_PAGE,
-  );
-
   const hasActiveFilters =
     searchQuery.trim().length > 0 || roleFilter.length > 0 || statusFilter.length > 0;
 
@@ -215,25 +204,21 @@ export function ProjectMembers({
         searchQuery={searchQuery}
         onSearchChange={(value) => {
           setSearchQuery(value);
-          setPage(1);
         }}
         roleOptions={roleFilterOptions}
         roleFilter={roleFilter}
         onRoleFilterChange={(value) => {
           setRoleFilter(value);
-          setPage(1);
         }}
         statusOptions={STATUS_FILTER_OPTIONS.map((o) => ({ ...o, label: t(o.label) }))}
         statusFilter={statusFilter}
         onStatusFilterChange={(value) => {
           setStatusFilter(value);
-          setPage(1);
         }}
         onReset={() => {
           setSearchQuery("");
           setRoleFilter([]);
           setStatusFilter([]);
-          setPage(1);
         }}
       />
 
@@ -255,7 +240,7 @@ export function ProjectMembers({
                 <TableBodySkeleton rows={6} columns={canManageMembers ? 6 : 5} />
               ) : (
                 <>
-                  {paginatedMembers.map((member) => {
+                  {filteredMembers.map((member) => {
                     const memberUser = userLookup.get(`usr-${member.userId}`);
                     const roleLabels = memberRoleLabels(member, memberUser);
 
@@ -340,17 +325,6 @@ export function ProjectMembers({
             </tbody>
           </table>
         </div>
-
-        {filteredMembers.length > 0 ? (
-          <TablePagination
-            page={validPage}
-            pageSize={MEMBERS_PER_PAGE}
-            total={filteredMembers.length}
-            totalPages={totalPages}
-            onPageChange={setPage}
-            itemLabel={t("thành viên")}
-          />
-        ) : null}
       </Surface>
     </div>
   );

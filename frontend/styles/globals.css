@@ -6,6 +6,17 @@
 
 html {
   min-height: 100%;
+  /* Thanh cuộn của trang luôn hiện: bề rộng nội dung cố định, bố cục không bị dịch ngang khi nội dung
+     đổi chiều cao (thu gọn/mở rộng card, tải dữ liệu...). Không dùng riêng scrollbar-gutter vì
+     thanh cuộn vẫn có thể biến mất/xuất hiện tuỳ trình duyệt. */
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+
+/* Trang vừa khít khung nhìn (tự quản lý cuộn bên trong) không cần thanh cuộn của trang. */
+html:has(.app-shell-fill) {
+  overflow-y: auto;
+  scrollbar-gutter: auto;
 }
 
 body {

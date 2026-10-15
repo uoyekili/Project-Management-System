@@ -94,7 +94,6 @@ export function ProjectHealthList({
                 >
                   <span className={styles.projectName}>
                     <span className={styles.ellipsis}>{project.name}</span>
-                    <span className={styles.projectCode}>{project.code}</span>
                   </span>
                   <span className={styles.projectBar}>
                     <StackedStatus project={project} />

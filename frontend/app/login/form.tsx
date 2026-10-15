@@ -19,7 +19,6 @@ export default function LoginForm() {
     passwordRef,
     handleEmailChange,
     handlePasswordChange,
-    handleFieldBlur,
     handleRememberChange,
     togglePasswordVisibility,
     handleSubmit,
@@ -40,7 +39,6 @@ export default function LoginForm() {
             data-testid="login-email"
             value={email}
             onChange={(event) => handleEmailChange(event.target.value)}
-            onBlur={handleFieldBlur("email")}
             disabled={isPending}
             type="email"
             autoComplete="username"
@@ -66,7 +64,6 @@ export default function LoginForm() {
           testId="login-password"
           value={password}
           onChange={(event) => handlePasswordChange(event.target.value)}
-          onBlur={handleFieldBlur("password")}
           isVisible={isPasswordVisible}
           onToggleVisibility={togglePasswordVisibility}
           disabled={isPending}

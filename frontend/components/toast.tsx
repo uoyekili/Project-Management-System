@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 import styles from "./toast.module.css";
@@ -21,6 +21,9 @@ export function useToast() {
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<ToastItem[]>([]);
   const nextId = useRef(1);
+  // Chỉ tạo portal sau khi mount để lần render đầu của client khớp với HTML từ server.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const dismiss = useCallback((id: number) => {
     setItems((current) => current.filter((item) => item.id !== id));
@@ -44,7 +47,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      {typeof document !== "undefined"
+      {mounted
         ? createPortal(
             <div className={styles.region} role="status" aria-live="polite">
               {items.map((item) => (

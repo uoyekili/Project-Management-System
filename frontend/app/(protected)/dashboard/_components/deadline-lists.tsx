@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useMemo } from "react";
 
-import { FilterSelect } from "@/components/filter-select";
 import { TaskPriorityBadge } from "@/components/ui";
 import { formatDate } from "@/lib/utils/format";
 import type { DashboardTaskPreview } from "@/types";
@@ -24,9 +23,7 @@ function TaskRow({ task, tone }: { task: DashboardTaskPreview; tone: "red" | "bl
           {task.title}
         </div>
         <div className={styles.taskMeta}>
-          <span>{task.key}</span>
-          {task.projectName ? <span>· {task.projectName}</span> : null}
-          {task.assigneeName ? <span>· {task.assigneeName}</span> : null}
+          {task.projectName ? <span>{task.projectName}</span> : null}
         </div>
       </div>
       <div className={styles.taskSide}>
@@ -39,32 +36,20 @@ function TaskRow({ task, tone }: { task: DashboardTaskPreview; tone: "red" | "bl
   );
 }
 
-function useProjectOptions(tasks: DashboardTaskPreview[], project: string) {
-  const options = useMemo(() => {
-    const names = new Map<string, string>();
-    for (const task of tasks) {
-      if (task.projectId && task.projectName) names.set(String(task.projectId), task.projectName);
-    }
-    return [
-      { value: "", label: t("Tất cả dự án") },
-      ...Array.from(names, ([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label, "vi")),
-    ];
-  }, [tasks]);
-  const filtered = useMemo(
+function useProjectFilter(tasks: DashboardTaskPreview[], project: string) {
+  return useMemo(
     () => (project ? tasks.filter((task) => String(task.projectId) === project) : tasks),
     [tasks, project],
   );
-  return { options, filtered };
 }
 
 type ListProps = {
   tasks: DashboardTaskPreview[];
   project: string;
-  onProjectChange: (project: string) => void;
 };
 
-export function OverdueList({ tasks, total, project, onProjectChange }: ListProps & { total: number }) {
-  const { options, filtered } = useProjectOptions(tasks, project);
+export function OverdueList({ tasks, total, project }: ListProps & { total: number }) {
+  const filtered = useProjectFilter(tasks, project);
 
   return (
     <DashCard
@@ -73,9 +58,6 @@ export function OverdueList({ tasks, total, project, onProjectChange }: ListProp
       subtitle={t("Trễ lâu nhất hiển thị trước")}
       aside={
         <>
-          {options.length > 2 ? (
-            <FilterSelect options={options} value={project} onChange={onProjectChange} searchable />
-          ) : null}
           <span className={`${styles.count} ${styles.countDanger}`}>{project ? filtered.length : total}</span>
         </>
       }
@@ -93,21 +75,13 @@ export function OverdueList({ tasks, total, project, onProjectChange }: ListProp
   );
 }
 
-export function UpcomingList({ tasks, project, onProjectChange }: ListProps) {
-  const { options, filtered } = useProjectOptions(tasks, project);
+export function UpcomingList({ tasks, project }: ListProps) {
+  const filtered = useProjectFilter(tasks, project);
 
-  const groups = useMemo(() => {
-    const buckets: Array<{ label: string; items: DashboardTaskPreview[] }> = [
-      { label: t("Hôm nay"), items: [] },
-      { label: t("Ngày mai"), items: [] },
-      { label: t("Trong 7 ngày tới"), items: [] },
-    ];
-    for (const task of filtered) {
-      const days = daysFromToday(task.dueDate);
-      buckets[days === null || days > 1 ? 2 : days <= 0 ? 0 : 1].items.push(task);
-    }
-    return buckets.filter((bucket) => bucket.items.length > 0);
-  }, [filtered]);
+  const sorted = useMemo(
+    () => [...filtered].sort((a, b) => (daysFromToday(a.dueDate) ?? 99) - (daysFromToday(b.dueDate) ?? 99)),
+    [filtered],
+  );
 
   return (
     <DashCard
@@ -115,24 +89,16 @@ export function UpcomingList({ tasks, project, onProjectChange }: ListProps) {
       subtitle={t("Trong 7 ngày tới")}
       aside={
         <>
-          {options.length > 2 ? (
-            <FilterSelect options={options} value={project} onChange={onProjectChange} searchable />
-          ) : null}
           <span className={styles.count}>{filtered.length}</span>
         </>
       }
     >
-      {groups.length === 0 ? (
+      {sorted.length === 0 ? (
         <div className={styles.empty}>{t("Không có task nào đến hạn trong 7 ngày tới.")}</div>
       ) : (
         <div className={styles.scroll}>
-          {groups.map((group) => (
-            <div key={group.label}>
-              <div className={styles.groupLabel}>{group.label}</div>
-              {group.items.map((task) => (
-                <TaskRow key={task.id} task={task} tone="blue" />
-              ))}
-            </div>
+          {sorted.map((task) => (
+            <TaskRow key={task.id} task={task} tone="blue" />
           ))}
         </div>
       )}

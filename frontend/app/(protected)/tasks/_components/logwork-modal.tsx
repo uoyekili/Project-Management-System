@@ -154,13 +154,6 @@ export function LogworkModal({
 
           <div className="app-modal-footer">
             <button
-              type="button"
-              className="secondary-button"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
-              {t("Hủy")}</button>
-            <button
               type="submit"
               className="primary-button"
               disabled={isSubmitting}

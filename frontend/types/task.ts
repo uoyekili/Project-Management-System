@@ -28,6 +28,8 @@ export interface Task {
   dueDate: string;
   estimateHours: number;
   spentHours: number;
+  /** Task đã được chia nhỏ: chỉ là node tổng hợp, không ghi logwork trực tiếp. */
+  hasChildren?: boolean;
   tags: string[];
   blockers: string[];
   commentsCount: number;

@@ -407,11 +407,6 @@ export function ProjectOverview({
             {counts.done}
             <small> / {counts.total} task</small>
           </span>
-          <div className={styles.stackBar} aria-hidden>
-            <span style={{ width: `${percentOf(counts.done, counts.total)}%`, background: STATUS_COLORS.done }} />
-            <span style={{ width: `${percentOf(counts.doing, counts.total)}%`, background: STATUS_COLORS.progress }} />
-            <span style={{ width: `${percentOf(counts.todo, counts.total)}%`, background: STATUS_COLORS.todo, opacity: 0.35 }} />
-          </div>
         </div>
         <div className={styles.stat}>
           <span className={styles.statLabel}>{t("Đang làm")}</span>
@@ -520,7 +515,9 @@ export function ProjectOverview({
                     <div className={styles.msBody}>
                       <div className={styles.msHead}>
                         <strong title={item.name}>{item.name}</strong>
-                        <span className={styles.msState}>{item.stateLabel}</span>
+                        {item.state !== "active" ? (
+                          <span className={styles.msState}>{item.stateLabel}</span>
+                        ) : null}
                       </div>
                       <div className={styles.msMeta}>
                         {item.start || item.end ? formatRange(item.start, item.end) : t("Chưa có lịch")}

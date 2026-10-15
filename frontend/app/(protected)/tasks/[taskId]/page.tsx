@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 
 import { WorkspaceShell } from "@/components/workspace-shell";
 import { LoadingState } from "@/components/loading-state";
@@ -15,6 +15,8 @@ import { t } from "@/lib/i18n";
 export default function TaskDetailPage() {
   const params = useParams();
   const taskId = typeof params?.taskId === "string" ? params.taskId : "";
+  // Mở từ trong dự án thì đã có nút quay lại, không cần nút "Đi tới dự án".
+  const fromProject = useSearchParams()?.get("from") === "project";
   const session = useAuthSession();
   const viewer = session?.currentUser ?? PENDING_USER;
 
@@ -63,7 +65,7 @@ export default function TaskDetailPage() {
           <EmptyState title={t("Không thể hiển thị")} description={error} />
         </Surface>
       ) : users && taskId ? (
-        <TaskDetailView key={taskId} taskId={taskId} users={users} viewer={viewer} />
+        <TaskDetailView key={taskId} taskId={taskId} users={users} viewer={viewer} fromProject={fromProject} />
       ) : (
         <LoadingState variant="cards" />
       )}

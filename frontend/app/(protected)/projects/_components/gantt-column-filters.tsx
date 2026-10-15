@@ -22,7 +22,7 @@ export type FilterPerson = {
 
 export type { FilterOption };
 
-const PERSON_AVATAR_SIZE = 22;
+const PERSON_AVATAR_SIZE = 20;
 
 function personInitials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);

@@ -85,6 +85,19 @@ interface GanttChartProps {
   toolbarHost?: HTMLElement | null;
 }
 
+/** Phần nào đang được thu gọn thành thanh mỏng: danh sách (trái), lịch (phải) hoặc không phần nào. */
+type GanttCollapsed = "none" | "left" | "right";
+
+const COLLAPSED_RAIL_WIDTH = 36;
+
+function CollapseChevron({ direction }: { direction: "left" | "right" }) {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d={direction === "left" ? "m15 18-6-6 6-6" : "m9 18 6-6-6-6"} />
+    </svg>
+  );
+}
+
 interface WbsNode {
   task: EnrichedTask;
   children: WbsNode[];
@@ -94,12 +107,12 @@ interface WbsNode {
 const MIN_NAME_COL_WIDTH = 140;
 const DEFAULT_NAME_COL_WIDTH = 200;
 const MAX_NAME_COL_WIDTH = 260;
-const STATUS_COL_WIDTH = 128;
-const PRIORITY_COL_WIDTH = 108;
-const DEFAULT_ASSIGNEE_COL_WIDTH = 156;
-const MAX_ASSIGNEE_COL_WIDTH = 156;
-const ET_COL_WIDTH = 124;
-const TIME_COL_WIDTH = 116;
+const STATUS_COL_WIDTH = 112;
+const PRIORITY_COL_WIDTH = 116;
+const DEFAULT_ASSIGNEE_COL_WIDTH = 140;
+const MAX_ASSIGNEE_COL_WIDTH = 140;
+const ET_COL_WIDTH = 100;
+const TIME_COL_WIDTH = 92;
 const BASE_ROW_HEIGHT = 42;
 
 function etPercent(task: EnrichedTask) {
@@ -350,6 +363,7 @@ export function GanttChart({ tasks, onTaskClick, onAddSubtask, isLoading = false
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
   const hoverLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [scale, setScale] = useState<GanttScale>("day");
+  const [collapsed, setCollapsed] = useState<GanttCollapsed>("none");
   const activeScale = normalizeGanttScale(scale);
   const scaleRef = useRef<GanttScale>(activeScale);
 
@@ -357,6 +371,13 @@ export function GanttChart({ tasks, onTaskClick, onAddSubtask, isLoading = false
   const leftPaneWidth = nameColWidth + fixedPaneWidth;
   // Danh sách chỉ chiếm vừa đủ các cột (cộng viền + thanh cuộn), tối đa 58%; phần còn lại nhường cho lịch.
   const leftColumnWidth = `min(${leftPaneWidth + LEFT_PANE_CHROME_WIDTH}px, 58%)`;
+
+  // Khi pane danh sách rộng hơn tổng các cột (ví dụ đã thu gọn lịch), phần dư dồn hết cho cột tên
+  // thay vì kéo giãn cột cuối. Độ rộng "cơ sở" (leftPaneWidth) vẫn dùng để chia grid nên không bị vòng lặp.
+  const [leftViewportWidth, setLeftViewportWidth] = useState(0);
+  const extraNameWidth = Math.max(0, leftViewportWidth - leftPaneWidth - LEFT_PANE_CHROME_WIDTH);
+  const displayNameColWidth = nameColWidth + extraNameWidth;
+  const displayLeftPaneWidth = leftPaneWidth + extraNameWidth;
 
   useEffect(() => {
     if (!toolbarHost) return;
@@ -570,6 +591,21 @@ export function GanttChart({ tasks, onTaskClick, onAddSubtask, isLoading = false
     return rows;
   }, [expanded, filteredNodes, filtersActive]);
 
+  // Với mỗi task cấp >= 1: mảng "là con cuối?" của chuỗi tổ tiên từ cấp 1 đến chính nó,
+  // dùng để vẽ nét đứt dạng cây (đường dọc tiếp tục chỉ khi tổ tiên còn anh em phía sau).
+  const treeGuides = useMemo(() => {
+    const guides = new Map<string, boolean[]>();
+    function walk(nodes: WbsNode[], parentChain: boolean[]) {
+      nodes.forEach((node, index) => {
+        const chain = [...parentChain, index === nodes.length - 1];
+        guides.set(String(node.task.id), chain);
+        walk(node.children, chain);
+      });
+    }
+    filteredNodes.forEach((root) => walk(root.children, []));
+    return guides;
+  }, [filteredNodes]);
+
   const timeline = useMemo(() => {
     let min = Infinity;
     let max = -Infinity;
@@ -637,6 +673,25 @@ export function GanttChart({ tasks, onTaskClick, onAddSubtask, isLoading = false
   }, [activeScale, scrollTodayIntoView, timeline.width, tasks.length]);
 
   useEffect(() => {
+    if (collapsed === "right") return;
+    const frame = requestAnimationFrame(() => scrollTodayIntoView());
+    return () => cancelAnimationFrame(frame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collapsed]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    const pane = leftPaneRef.current;
+    if (!pane) return;
+
+    const update = () => setLeftViewportWidth(pane.clientWidth);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(pane);
+    return () => observer.disconnect();
+  }, [isLoading]);
+
+  useEffect(() => {
     if (isLoading) return;
     const pane = rightPaneRef.current;
     if (!pane) return;
@@ -665,7 +720,7 @@ export function GanttChart({ tasks, onTaskClick, onAddSubtask, isLoading = false
     if (onTaskClick) {
       onTaskClick(taskId);
     } else {
-      router.push(`/tasks/${taskId}`);
+      router.push(`/tasks/${taskId}?from=project`);
     }
   };
 
@@ -773,10 +828,32 @@ export function GanttChart({ tasks, onTaskClick, onAddSubtask, isLoading = false
         onMouseEnter={() => onRowEnter(node.task.id)}
         onMouseLeave={() => onRowLeave(node.task.id)}
       >
-        <div className={styles.ganttLeftCell} style={{ width: `${leftPaneWidth}px` }}>
-          <div className={styles.ganttLeftCol} style={{ width: `${nameColWidth}px` }}>
+        <div className={styles.ganttLeftCell} style={{ width: `${displayLeftPaneWidth}px` }}>
+          <div className={styles.ganttLeftCol} style={{ width: `${displayNameColWidth}px` }}>
             {node.level > 0 ? (
-              <div style={{ width: `${node.level * 18}px`, flexShrink: 0 }} />
+              <div
+                className={styles.treeGuides}
+                style={{ width: `${node.level * 18}px` }}
+                aria-hidden="true"
+              >
+                {(treeGuides.get(String(node.task.id)) ?? []).map((isLast, column) => {
+                  const isOwnColumn = column === node.level - 1;
+                  if (!isOwnColumn && isLast) return null;
+                  return (
+                    <span
+                      key={column}
+                      className={`${styles.treeGuide} ${
+                        isOwnColumn
+                          ? isLast
+                            ? styles.treeGuideEnd
+                            : styles.treeGuideBranch
+                          : styles.treeGuideThrough
+                      }`}
+                      style={{ left: `${column * 18}px` }}
+                    />
+                  );
+                })}
+              </div>
             ) : null}
             {hasChildren ? (
               <button
@@ -803,12 +880,13 @@ export function GanttChart({ tasks, onTaskClick, onAddSubtask, isLoading = false
             {onAddSubtask ? (
               <button
                 type="button"
-                className={styles.expandBtn}
+                className={`${styles.expandBtn} ${styles.addSubtaskBtn}`}
                 onClick={(event) => {
                   event.stopPropagation();
                   onAddSubtask(node.task.id);
                 }}
-                title={tr("Tạo subtask")}
+                aria-label={tr("Tạo task con")}
+                data-tooltip={tr("Tạo task con")}
                 style={{ marginLeft: "auto" }}
               >
                 +
@@ -960,27 +1038,31 @@ export function GanttChart({ tasks, onTaskClick, onAddSubtask, isLoading = false
         </div>
       ) : null}
           <div className={styles.ganttHeaderControls}>
-            <div className={styles.ganttScaleToggle} role="group" aria-label={tr("Chế độ xem thời gian")}>
-              {GANTT_SCALES.map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  className={`${styles.ganttScaleButton} ${activeScale === item ? styles.ganttScaleButtonActive : ""}`}
-                  aria-pressed={activeScale === item}
-                  onClick={() => setScale(item)}
-                >
-                  {ganttScaleLabel(item)}
-                </button>
-              ))}
-            </div>
-            <button
-              type="button"
-              className={styles.ganttTodayBtn}
-              title={tr("Về hôm nay")}
-              onClick={() => scrollTodayIntoView(true)}
-            >
-              <span className={styles.ganttTodayDot} aria-hidden />
-              {tr("Hôm nay")}</button>
+            {collapsed !== "right" ? (
+              <>
+              <div className={styles.ganttScaleToggle} role="group" aria-label={tr("Chế độ xem thời gian")}>
+                {GANTT_SCALES.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    className={`${styles.ganttScaleButton} ${activeScale === item ? styles.ganttScaleButtonActive : ""}`}
+                    aria-pressed={activeScale === item}
+                    onClick={() => setScale(item)}
+                  >
+                    {ganttScaleLabel(item)}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                className={styles.ganttTodayBtn}
+                title={tr("Về hôm nay")}
+                onClick={() => scrollTodayIntoView(true)}
+              >
+                <span className={styles.ganttTodayDot} aria-hidden />
+                {tr("Hôm nay")}</button>
+              </>
+            ) : null}
           </div>
     </div>
   );
@@ -993,12 +1075,61 @@ export function GanttChart({ tasks, onTaskClick, onAddSubtask, isLoading = false
   return (
     <div className={styles.ganttContainer} style={{ flex: 1, width: "100%", height: "100%" }}>
       {toolbar}
-      <div className={styles.ganttSplit} style={{ gridTemplateColumns: `${leftColumnWidth} minmax(0, 1fr)` }}>
-        <div className={styles.ganttLeftPane}>
+      <div
+        className={styles.ganttSplit}
+        style={{
+          gridTemplateColumns:
+            collapsed === "left"
+              ? `${COLLAPSED_RAIL_WIDTH}px minmax(0, 1fr)`
+              : collapsed === "right"
+                ? `minmax(0, 1fr) ${COLLAPSED_RAIL_WIDTH}px`
+                : `${leftColumnWidth} minmax(0, 1fr)`,
+        }}
+      >
+        {collapsed === "left" ? (
+          <button
+            type="button"
+            className={styles.ganttRail}
+            aria-label={tr("Mở rộng danh sách")}
+            title={tr("Mở rộng danh sách")}
+            onClick={() => setCollapsed("none")}
+          >
+            <CollapseChevron direction="right" />
+            <span className={styles.ganttRailLabel}>{tr("Danh sách")}</span>
+          </button>
+        ) : null}
+        {collapsed === "none" ? (
+          <div
+            className={styles.ganttCollapseGroup}
+            style={{ left: `calc(${leftColumnWidth} + 4px)` }}
+            role="group"
+            aria-label={tr("Thu gọn / mở rộng")}
+          >
+            <button
+              type="button"
+              className={styles.ganttCollapseBtn}
+              aria-label={tr("Thu gọn danh sách")}
+              title={tr("Thu gọn danh sách")}
+              onClick={() => setCollapsed("left")}
+            >
+              <CollapseChevron direction="left" />
+            </button>
+            <button
+              type="button"
+              className={styles.ganttCollapseBtn}
+              aria-label={tr("Thu gọn lịch")}
+              title={tr("Thu gọn lịch")}
+              onClick={() => setCollapsed("right")}
+            >
+              <CollapseChevron direction="right" />
+            </button>
+          </div>
+        ) : null}
+        <div className={`${styles.ganttLeftPane} ${collapsed === "left" ? styles.ganttPaneHidden : ""}`}>
           <div className={styles.ganttLeftScroll} ref={leftPaneRef}>
-          <div className={styles.ganttLeftInner} style={{ width: leftPaneWidth }}>
-            <div className={styles.ganttLeftHeader} style={{ width: leftPaneWidth }}>
-              <div className={styles.ganttLeftHeaderCell} style={{ width: `${nameColWidth}px`, position: "relative" }}>
+          <div className={styles.ganttLeftInner} style={{ width: displayLeftPaneWidth }}>
+            <div className={styles.ganttLeftHeader} style={{ width: displayLeftPaneWidth }}>
+              <div className={styles.ganttLeftHeaderCell} style={{ width: `${displayNameColWidth}px`, position: "relative" }}>
                 <span className={styles.ganttHeaderLabel}>{tr("Tên công việc")}</span>
                 <div
                   className={styles.colResizeHandle}
@@ -1025,7 +1156,7 @@ export function GanttChart({ tasks, onTaskClick, onAddSubtask, isLoading = false
                   minWidth={360}
                 />
               </div>
-              <div className={styles.ganttLeftHeaderCell} style={{ width: `${PRIORITY_COL_WIDTH}px` }}>
+              <div className={`${styles.ganttLeftHeaderCell} ${styles.ganttLeftHeaderCellStart}`} style={{ width: `${PRIORITY_COL_WIDTH}px` }}>
                 <span className={styles.ganttHeaderLabel}>{tr("Ưu tiên")}</span>
                 <HeaderMultiFilter
                   label={tr("Lọc ưu tiên")}
@@ -1035,7 +1166,7 @@ export function GanttChart({ tasks, onTaskClick, onAddSubtask, isLoading = false
                   minWidth={216}
                 />
               </div>
-              <div className={styles.ganttLeftHeaderCell} style={{ width: `${STATUS_COL_WIDTH}px` }}>
+              <div className={`${styles.ganttLeftHeaderCell} ${styles.ganttLeftHeaderCellStart}`} style={{ width: `${STATUS_COL_WIDTH}px` }}>
                 <span className={styles.ganttHeaderLabel}>{tr("Trạng thái")}</span>
                 <HeaderMultiFilter
                   label={tr("Lọc trạng thái")}
@@ -1058,7 +1189,7 @@ export function GanttChart({ tasks, onTaskClick, onAddSubtask, isLoading = false
           </div>
         </div>
 
-        <div className={styles.ganttRightPane}>
+        <div className={`${styles.ganttRightPane} ${collapsed === "right" ? styles.ganttPaneHidden : ""}`}>
           <div className={styles.ganttRightScroll} ref={rightPaneRef}>
           <div className={styles.ganttRightInner} style={{ width: timeline.width, minWidth: timeline.width }}>
             <div
@@ -1103,6 +1234,18 @@ export function GanttChart({ tasks, onTaskClick, onAddSubtask, isLoading = false
           </div>
           </div>
         </div>
+        {collapsed === "right" ? (
+          <button
+            type="button"
+            className={styles.ganttRail}
+            aria-label={tr("Mở rộng lịch")}
+            title={tr("Mở rộng lịch")}
+            onClick={() => setCollapsed("none")}
+          >
+            <CollapseChevron direction="left" />
+            <span className={styles.ganttRailLabel}>{tr("Lịch")}</span>
+          </button>
+        ) : null}
       </div>
 
       {tooltip ? <GanttTaskTooltip anchor={tooltip} /> : null}

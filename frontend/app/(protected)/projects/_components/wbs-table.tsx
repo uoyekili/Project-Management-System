@@ -58,7 +58,7 @@ export function WbsTable({ tasks }: WbsTableProps) {
   };
 
   const handleRowClick = (taskId: string) => {
-    router.push(`/tasks/${taskId}`);
+    router.push(`/tasks/${taskId}?from=project`);
   };
 
   function renderTree(nodes: WbsNode[]): React.ReactNode {

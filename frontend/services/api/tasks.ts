@@ -93,6 +93,7 @@ function mapBackendTask(data: any): Task {
     dueDate: data.deadline || "",
     estimateHours: data.estimated_hours || 0,
     spentHours: data.spent_hours || data.spentHours || 0,
+    hasChildren: Boolean(data.has_children ?? data.hasChildren),
     tags: [],
     blockers: [],
     commentsCount: 0,
@@ -190,6 +191,19 @@ export const taskApi = {
     const endpoint = {
       method: "POST" as const,
       path: `/api/tasks/${taskId}/comments`,
+    };
+    const response = await requestApi<any>(endpoint, { body: JSON.stringify({ content }) });
+    return { data: mapBackendComment(response.data), meta: response.meta };
+  },
+
+  async updateComment(
+    taskId: string,
+    commentId: string,
+    content: string,
+  ): Promise<ApiResponse<TaskComment>> {
+    const endpoint = {
+      method: "PUT" as const,
+      path: `/api/tasks/${taskId}/comments/${commentId}`,
     };
     const response = await requestApi<any>(endpoint, { body: JSON.stringify({ content }) });
     return { data: mapBackendComment(response.data), meta: response.meta };
@@ -450,13 +464,5 @@ export const taskApi = {
     };
     const response = await requestApi<any[]>(endpoint);
     return { data: response.data, meta: response.meta };
-  },
-
-  async updateComment(commentId: string, content: string): Promise<ApiResponse<any>> {
-    // Note: Backend endpoint for update comment hasn't been implemented yet. Mocking response for now.
-    return {
-      data: { id: commentId, content, updatedAt: new Date().toISOString() },
-      meta: { source: "mock", latencyMs: 120, generatedAt: new Date().toISOString() },
-    };
   },
 };

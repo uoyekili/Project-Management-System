@@ -2,11 +2,10 @@
 
 import { useRef, useState, type ChangeEvent } from "react";
 
-import { RoleTags } from "@/components/role-tags";
 import { UserAvatar } from "@/components/user-avatar";
 import { t } from "@/lib/i18n";
 import { userApi } from "@/services/api";
-import { roleDisplayLabels } from "@/lib/utils/format";
+import { formatEmployeeCode } from "@/lib/utils/employee";
 import type { UserProfile } from "@/types";
 
 import { AvatarCropper } from "./avatar-cropper";
@@ -28,11 +27,6 @@ export function ProfileHeader({ user, isSelf, onUpdate }: ProfileHeaderProps) {
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const hasCustomAvatar = Boolean(user.avatarUrl) && !/\/default\.png(\?|$)/.test(user.avatarUrl ?? "");
-  const roleLabels = roleDisplayLabels(user.roles?.length ? user.roles : user.role);
-  const subtitle = user.jobTitle || user.email;
-  const subtitleDuplicatesRole = roleLabels.some(
-    (label) => label.trim().toLowerCase() === subtitle.trim().toLowerCase(),
-  );
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -87,19 +81,12 @@ export function ProfileHeader({ user, isSelf, onUpdate }: ProfileHeaderProps) {
   }
 
   return (
-    <aside className={styles.identity}>
-      <UserAvatar name={user.name} avatarUrl={user.avatarUrl} size={128} />
-      <h2 className={styles.name}>{user.name}</h2>
-      {subtitleDuplicatesRole ? null : <p className={styles.subtitle}>{subtitle}</p>}
-      <div className={styles.badges}>
-        <RoleTags roles={user.roles?.length ? user.roles : user.role} />
+    <section className={styles.banner} aria-label={t("Danh tính")}>
+      <UserAvatar name={user.name} avatarUrl={user.avatarUrl} size={96} />
+      <div className={styles.identity}>
+        <h2 className={styles.name}>{user.name}</h2>
+        <p className={styles.subtitle}>{formatEmployeeCode(user.id, user.employeeCode)}</p>
       </div>
-
-      {notice ? (
-        <p className={notice.isError ? `form-error ${styles.notice}` : styles.notice} role="status">
-          {notice.text}
-        </p>
-      ) : null}
 
       {isSelf ? (
         <div className={styles.identityActions}>
@@ -126,6 +113,12 @@ export function ProfileHeader({ user, isSelf, onUpdate }: ProfileHeaderProps) {
         </div>
       ) : null}
 
+      {notice ? (
+        <p className={notice.isError ? `form-error ${styles.notice}` : styles.notice} role="status">
+          {notice.text}
+        </p>
+      ) : null}
+
       {cropImageSrc ? (
         <AvatarCropper
           imageSrc={cropImageSrc}
@@ -133,6 +126,6 @@ export function ProfileHeader({ user, isSelf, onUpdate }: ProfileHeaderProps) {
           onCancel={() => setCropImageSrc(null)}
         />
       ) : null}
-    </aside>
+    </section>
   );
 }

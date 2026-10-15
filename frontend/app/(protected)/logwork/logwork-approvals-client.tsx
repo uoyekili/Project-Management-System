@@ -1,8 +1,7 @@
 "use client";
 
-import { Modal, MODAL_EXIT_MS } from "@/components/modal";
+import { MODAL_EXIT_MS } from "@/components/modal";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { logworkApi, type PendingLogWork } from "@/services/api/logworks";
@@ -12,12 +11,14 @@ import { useConfirmDialog } from "@/components/confirm-dialog";
 import { Surface } from "@/components/ui";
 import { UserAvatar } from "@/components/user-avatar";
 import type { FilterOption } from "@/components/filter-select";
-import { TablePagination } from "@/components/table-pagination";
 import { formatDateNumeric, formatHours } from "@/lib/utils/format";
 import { resolveLogworkTitle } from "@/lib/utils/logwork";
+import { LogworkDetailModal } from "./_components/logwork-detail-modal";
 import { LogworkApprovalsFilter, type LogworkDatePeriod } from "./_components/logwork-approvals-filter";
 import styles from "./logwork-approvals.module.css";
 import { t } from "@/lib/i18n";
+
+const LOGWORKS_BATCH_SIZE = 20;
 
 function staffKey(logwork: PendingLogWork) {
   return logwork.user_id != null ? String(logwork.user_id) : logwork.user_name || "";
@@ -69,7 +70,6 @@ function matchesDatePeriod(workDate: string, period: LogworkDatePeriod) {
   return workDate >= monthStart && workDate <= monthEnd;
 }
 
-const LOGWORKS_PER_PAGE = 15;
 
 export function LogworkApprovalsClient() {
   const session = useAuthSession();
@@ -86,8 +86,9 @@ export function LogworkApprovalsClient() {
   const [flashLogworkId, setFlashLogworkId] = useState<string | null>(null);
   const [selectedLogwork, setSelectedLogwork] = useState<PendingLogWork | null>(null);
   const [isModalClosing, setIsModalClosing] = useState(false);
-  const [isPortalReady, setIsPortalReady] = useState(false);
-  const [page, setPage] = useState(1);
+  const [visibleCount, setVisibleCount] = useState(LOGWORKS_BATCH_SIZE);
+  const tableWrapRef = useRef<HTMLDivElement | null>(null);
+  const loadMoreRef = useRef<HTMLTableRowElement | null>(null);
   const highlightHandledRef = useRef<string | null>(null);
 
   const hasActiveFilters =
@@ -98,7 +99,6 @@ export function LogworkApprovalsClient() {
     setProjectFilter([]);
     setStaffFilter([]);
     setDatePeriod("");
-    setPage(1);
   }, []);
 
   const projectOptions = useMemo(() => {
@@ -175,16 +175,32 @@ export function LogworkApprovalsClient() {
     });
   }, [datePeriod, logworks, projectFilter, search, staffFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredLogworks.length / LOGWORKS_PER_PAGE));
-  const validPage = Math.min(page, totalPages);
-  const paginatedLogworks = filteredLogworks.slice(
-    (validPage - 1) * LOGWORKS_PER_PAGE,
-    validPage * LOGWORKS_PER_PAGE,
+  const visibleLogworks = useMemo(
+    () => filteredLogworks.slice(0, visibleCount),
+    [filteredLogworks, visibleCount],
   );
+  const hasMore = visibleCount < filteredLogworks.length;
 
+  // Đổi bộ lọc thì quay về lô đầu tiên.
   useEffect(() => {
-    setIsPortalReady(true);
-  }, []);
+    setVisibleCount(LOGWORKS_BATCH_SIZE);
+  }, [datePeriod, projectFilter, search, staffFilter]);
+
+  // Cuộn gần cuối bảng thì render thêm một lô.
+  useEffect(() => {
+    const sentinel = loadMoreRef.current;
+    if (!sentinel || !hasMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setVisibleCount((current) => current + LOGWORKS_BATCH_SIZE);
+        }
+      },
+      { root: tableWrapRef.current, rootMargin: "200px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, visibleCount]);
 
   const fetchLogworks = async () => {
     try {
@@ -231,7 +247,7 @@ export function LogworkApprovalsClient() {
     if (index < 0) return;
 
     highlightHandledRef.current = highlightLogworkId;
-    setPage(Math.floor(index / LOGWORKS_PER_PAGE) + 1);
+    setVisibleCount((current) => Math.max(current, index + 1));
     setFlashLogworkId(String(highlightLogworkId));
     openDetail(filteredLogworks[index]);
 
@@ -271,16 +287,6 @@ export function LogworkApprovalsClient() {
     const timer = window.setTimeout(handleModalClosed, MODAL_EXIT_MS);
     return () => window.clearTimeout(timer);
   }, [handleModalClosed, isModalClosing, selectedLogwork]);
-
-  useEffect(() => {
-    if (!selectedLogwork) return;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [selectedLogwork]);
 
   const handleApprove = async (id: number) => {
     setActionLoading(id);
@@ -331,33 +337,21 @@ export function LogworkApprovalsClient() {
       <div className={`${styles.pageStack} filtered-list-page`}>
         <LogworkApprovalsFilter
           search={search}
-          onSearchChange={(value) => {
-            setSearch(value);
-            setPage(1);
-          }}
+          onSearchChange={setSearch}
           projectFilter={projectFilter}
-          onProjectFilterChange={(value) => {
-            setProjectFilter(value);
-            setPage(1);
-          }}
+          onProjectFilterChange={setProjectFilter}
           projectOptions={projectOptions}
           staffFilter={staffFilter}
-          onStaffFilterChange={(value) => {
-            setStaffFilter(value);
-            setPage(1);
-          }}
+          onStaffFilterChange={setStaffFilter}
           staffOptions={staffOptions}
           datePeriod={datePeriod}
-          onDatePeriodChange={(value) => {
-            setDatePeriod(value);
-            setPage(1);
-          }}
+          onDatePeriodChange={setDatePeriod}
           hasActiveFilters={hasActiveFilters}
           onReset={resetFilters}
         />
 
         <Surface className={`${styles.tableSurface} filtered-list-table`}>
-          <div className={`${styles.tableWrap} table-scroll`}>
+          <div ref={tableWrapRef} className={`${styles.tableWrap} table-scroll`}>
             <table className={styles.table}>
               <thead>
                 <tr>
@@ -373,7 +367,8 @@ export function LogworkApprovalsClient() {
                 {loading ? (
                   <TableBodySkeleton rows={8} columns={6} />
                 ) : filteredLogworks.length > 0 ? (
-                  paginatedLogworks.map((lw) => (
+                  <>
+                  {visibleLogworks.map((lw) => (
                     <tr
                       key={lw.id}
                       id={`logwork-row-${lw.id}`}
@@ -429,7 +424,13 @@ export function LogworkApprovalsClient() {
                       <td className={styles.hoursText}>{formatHours(Number(lw.hours_spent))}</td>
                       <td className={styles.dateText}>{formatDateNumeric(lw.work_date)}</td>
                     </tr>
-                  ))
+                  ))}
+                  {hasMore ? (
+                    <tr ref={loadMoreRef} aria-hidden="true">
+                      <td colSpan={6} />
+                    </tr>
+                  ) : null}
+                  </>
                 ) : (
                   <tr>
                     <td colSpan={6} className={styles.emptyFilter}>
@@ -447,121 +448,32 @@ export function LogworkApprovalsClient() {
               </tbody>
             </table>
           </div>
-
-          {!loading && filteredLogworks.length > 0 ? (
-            <TablePagination
-              page={validPage}
-              pageSize={LOGWORKS_PER_PAGE}
-              total={filteredLogworks.length}
-              totalPages={totalPages}
-              onPageChange={setPage}
-              itemLabel="logwork"
-            />
-          ) : null}
         </Surface>
       </div>
 
-      {isPortalReady && selectedLogwork
-        ? createPortal(
-            <Modal
-              title={selectedTitle}
-              titleId="approval-logwork-title"
-              size="lg"
-              className={styles.detailModal}
-              onClose={handleModalClosed}
-              dismissible={actionLoading == null}
-              closing={isModalClosing}
-            >
-                <div className={`app-modal-body ${styles.detailBody}`}>
-                  <dl className={styles.metaGrid}>
-                    <div className={styles.metaItem}>
-                      <dt>{t("Nhân sự")}</dt>
-                      <dd className={styles.metaPerson}>
-                        <UserAvatar
-                          name={selectedLogwork.user_name || "Unknown"}
-                          avatarUrl={selectedLogwork.user_avatar_url}
-                          size={26}
-                          className={styles.avatarToken}
-                        />
-                        <span className={styles.metaPersonName}>{selectedLogwork.user_name || "Unknown"}</span>
-                      </dd>
-                    </div>
-                    <div className={styles.metaItem}>
-                      <dt>{t("Trạng thái")}</dt>
-                      <dd>
-                        <span className="pill pill-watch">{t("Chờ duyệt")}</span>
-                      </dd>
-                    </div>
-                    <div className={styles.metaItem}>
-                      <dt>{t("Dự án")}</dt>
-                      <dd className={styles.metaValueEllipsis} title={selectedLogwork.project_name || t("Không xác định")}>
-                        {selectedLogwork.project_id ? (
-                          <Link
-                            href={`/projects/${selectedLogwork.project_id}?tab=overview`}
-                            className={styles.metaLink}
-                          >
-                            {selectedLogwork.project_name || t("Không xác định")}
-                          </Link>
-                        ) : (
-                          selectedLogwork.project_name || t("Không xác định")
-                        )}
-                      </dd>
-                    </div>
-                    <div className={styles.metaItem}>
-                      <dt>Task</dt>
-                      <dd className={styles.metaValueEllipsis} title={selectedLogwork.task_title || "---"}>
-                        {selectedLogwork.task_id && selectedLogwork.project_id ? (
-                          <Link
-                            href={`/projects/${selectedLogwork.project_id}?highlightTaskId=${selectedLogwork.task_id}&highlightColor=green`}
-                            className={styles.metaLink}
-                          >
-                            {selectedLogwork.task_title || "---"}
-                          </Link>
-                        ) : (
-                          selectedLogwork.task_title || "---"
-                        )}
-                      </dd>
-                    </div>
-                    <div className={styles.metaItem}>
-                      <dt>{t("Số giờ")}</dt>
-                      <dd>{formatHours(Number(selectedLogwork.hours_spent))}</dd>
-                    </div>
-                    <div className={styles.metaItem}>
-                      <dt>{t("Ngày tạo")}</dt>
-                      <dd>{formatDateNumeric(selectedLogwork.work_date)}</dd>
-                    </div>
-                  </dl>
-
-                  <div className={`${styles.sectionPanel} ${styles.contentPanel}`}>
-                    <span className={styles.sectionLabel}>{t("Nội dung công việc")}</span>
-                    <div className={styles.contentBox}>
-                      {selectedLogwork.work_content?.trim() || t("— Không có mô tả —")}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="app-modal-footer">
-                  <button
-                    type="button"
-                    data-testid={`reject-logwork-${selectedLogwork.id}`}
-                    className="danger-button btn-sm"
-                    onClick={() => void handleReject(selectedLogwork.id)}
-                    disabled={actionLoading === selectedLogwork.id}
-                  >
-                    {t("Từ chối")}</button>
-                  <button
-                    type="button"
-                    data-testid={`approve-logwork-${selectedLogwork.id}`}
-                    className="primary-button btn-sm"
-                    onClick={() => void handleApprove(selectedLogwork.id)}
-                    disabled={actionLoading === selectedLogwork.id}
-                  >
-                    {t("Duyệt")}</button>
-                </div>
-            </Modal>,
-            document.body,
-          )
-        : null}
+      {selectedLogwork ? (
+        <LogworkDetailModal
+          logwork={{
+            id: selectedLogwork.id,
+            title: selectedTitle,
+            userName: selectedLogwork.user_name,
+            userAvatarUrl: selectedLogwork.user_avatar_url,
+            status: "PENDING",
+            projectId: selectedLogwork.project_id,
+            projectName: selectedLogwork.project_name,
+            taskId: selectedLogwork.task_id,
+            taskTitle: selectedLogwork.task_title,
+            hours: Number(selectedLogwork.hours_spent),
+            workDate: selectedLogwork.work_date,
+            content: selectedLogwork.work_content,
+          }}
+          onClose={handleModalClosed}
+          closing={isModalClosing}
+          busy={actionLoading != null}
+          onApprove={() => void handleApprove(selectedLogwork.id)}
+          onReject={() => void handleReject(selectedLogwork.id)}
+        />
+      ) : null}
     </>
   );
 }
