@@ -31,6 +31,10 @@ class TaskCommentCreate(BaseModel):
     content: str
 
 
+class TaskCommentUpdate(BaseModel):
+    content: str
+
+
 class TaskCommentResponse(BaseModel):
     id: int
     task_id: int
@@ -276,6 +280,7 @@ class TaskResponse(TaskBase):
     key: Optional[str] = None  # Ví dụ: TASK-123
     assignees: List[TaskAssigneeResponse] = []
     spent_hours: float = 0.0
+    has_children: bool = False
 
     @field_validator("created_at", "updated_at", "completed_at")
     @classmethod

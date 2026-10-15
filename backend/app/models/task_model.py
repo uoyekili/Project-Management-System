@@ -39,12 +39,27 @@ class Task(Base):
         session = object_session(self)
         if not session:
             return 0.0
-        total = (
-            session.query(func.sum(LogWork.hours_spent))
-            .filter(LogWork.task_id == self.id, LogWork.status == "APPROVED")
-            .scalar()
-        )
-        return float(total or 0.0)
+        return _spent_hours_for(session, self.id, set())
+
+
+def _spent_hours_for(session, task_id: int, visited: set[int]) -> float:
+    """Task có con: tổng spent của các con (đệ quy); task lá: tổng logwork APPROVED của nó."""
+    if task_id in visited:
+        return 0.0
+    visited.add(task_id)
+
+    child_ids = [
+        row[0] for row in session.query(Task.id).filter(Task.parent_task_id == task_id).all()
+    ]
+    if child_ids:
+        return sum(_spent_hours_for(session, child_id, visited) for child_id in child_ids)
+
+    total = (
+        session.query(func.sum(LogWork.hours_spent))
+        .filter(LogWork.task_id == task_id, LogWork.status == "APPROVED")
+        .scalar()
+    )
+    return float(total or 0.0)
 
 
 class TaskAssignees(Base):

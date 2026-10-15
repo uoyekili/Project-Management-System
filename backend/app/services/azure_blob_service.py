@@ -115,6 +115,7 @@ def is_valid_avatar_blob(blob_name: str) -> bool:
 def avatar_public_url(value: str | None) -> str:
     """Tên blob (hoặc rỗng) -> đường dẫn API phục vụ ảnh. Rỗng rơi về default.png;
     URL đầy đủ giữ nguyên. Frontend ghép thêm địa chỉ API khi hiển thị."""
-    if value and value.startswith(("http://", "https://")):
+    if value and (value.startswith(("http://", "https://")) or value.startswith(AVATAR_ROUTE)):
+        # Idempotent: model_dump() -> model(**data) chạy lại validator trên giá trị đã là đường dẫn công khai.
         return value
     return AVATAR_ROUTE + (value or DEFAULT_AVATAR_BLOB)

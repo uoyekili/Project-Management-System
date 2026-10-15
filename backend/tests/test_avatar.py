@@ -43,6 +43,14 @@ def test_public_url_defaults_and_passthrough(fake_storage):
     assert blob.avatar_public_url("https://cdn.example/a.png") == "https://cdn.example/a.png"
 
 
+def test_public_url_is_idempotent(fake_storage):
+    once = blob.avatar_public_url("default.png")
+    assert blob.avatar_public_url(once) == once
+    assert blob.avatar_public_url(blob.avatar_public_url("users/user_1_x.jpg")) == (
+        "/api/avatars/users/user_1_x.jpg"
+    )
+
+
 def test_profile_schema_returns_avatar_route(fake_storage):
     profile = UserProfile.model_validate(
         SimpleNamespace(

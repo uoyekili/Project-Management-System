@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.models.project_model import Project, ProjectMember
 from app.models.task_model import Task
 from app.models.user_model import User
+from app.repositories.user_repository import role_rank_expr
 
 
 def _active_project_member_filter():
@@ -142,7 +143,7 @@ def list_project_members(
     if search:
         term = f"%{search.lower()}%"
         query = query.filter(or_(User.full_name.ilike(term), User.email.ilike(term)))
-    return query.order_by(desc(ProjectMember.joined_at), desc(ProjectMember.id)).all()
+    return query.order_by(role_rank_expr().asc(), User.full_name.asc(), ProjectMember.id.asc()).all()
 
 
 def list_project_user_ids(

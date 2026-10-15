@@ -174,9 +174,11 @@ def build_task_spent_rollup(
 ) -> dict[int, float]:
     """Roll approved leaf-task logwork up through every ancestor task.
 
-    A parent is a summary node, so once it has children its own direct logwork is
-    ignored. This mirrors ``build_task_estimate_rollup`` and prevents effort from
-    being counted twice when a large task is decomposed after work has started.
+    A parent is a summary node: its spent is the sum of its children. Logwork cannot be
+    added to a task that has children, and ``task_service.migrate_parent_logworks`` moves
+    existing logwork into a child when a leaf is broken down, so a parent's own direct
+    logwork only exists in legacy data (see ``scripts/migrate_parent_logworks.py``) and is
+    ignored here to avoid counting effort twice.
     """
     task_by_id = {task.id: task for task in tasks}
     children_by_parent_id: dict[int, list[Task]] = defaultdict(list)

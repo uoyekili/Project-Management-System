@@ -1,12 +1,31 @@
 import math
 import re
 
-from sqlalchemy import desc, or_
+from sqlalchemy import case, or_, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.department_model import Department
 from app.models.role_model import Role
 from app.models.user_model import User
+
+
+# Thứ tự cấp bậc từ cao xuống thấp; role tự tạo (không có trong danh sách) xếp sau Employee, trước Intern.
+ROLE_RANK_ORDER = ("Admin", "CEO", "Project Manager", "Team Leader", "Employee", "Intern")
+
+
+def role_rank_expr():
+    """Biểu thức SQL xếp hạng cấp bậc của user (nhỏ hơn = cấp cao hơn)."""
+    unknown_rank = ROLE_RANK_ORDER.index("Intern") - 0.5
+    return (
+        select(
+            case(
+                *[(Role.name == name, index) for index, name in enumerate(ROLE_RANK_ORDER)],
+                else_=unknown_rank,
+            )
+        )
+        .where(Role.id == User.role_id)
+        .scalar_subquery()
+    )
 
 
 def _code_clauses(search: str) -> list:
@@ -37,6 +56,11 @@ def _csv_values(value: str | None) -> list[str]:
     return [part.strip() for part in value.split(",") if part.strip() and part.strip() != "ALL"]
 
 
+def _exclude_admin(query):
+    """Admin chỉ quản trị hệ thống, không thuộc nhân sự vận hành nên không hiện trong danh sách nhân sự."""
+    return query.filter(User.role_id.notin_(select(Role.id).where(Role.name == "Admin")))
+
+
 def get_users(
     db: Session,
     search: str | None = None,
@@ -47,7 +71,7 @@ def get_users(
     page: int = 1,
     page_size: int = 10,
 ):
-    query = _base_query(db)
+    query = _exclude_admin(_base_query(db))
 
     if user_ids is not None:
         if not user_ids:
@@ -94,7 +118,7 @@ def get_users(
     total_pages = math.ceil(total / page_size) if total > 0 else 1
 
     users = (
-        query.order_by(desc(User.created_at), desc(User.id))
+        query.order_by(role_rank_expr().asc(), User.full_name.asc(), User.id.asc())
         .offset((page - 1) * page_size)
         .limit(page_size)
         .all()
@@ -111,7 +135,7 @@ def list_active_by_department_name(
     search: str | None = None,
     exclude_permission: str | None = None,
 ) -> list[User]:
-    query = _base_query(db).join(User.role_ref).filter(User.is_active.is_(True))
+    query = _exclude_admin(_base_query(db)).join(User.role_ref).filter(User.is_active.is_(True))
     if department_name:
         query = query.join(User.department).filter(Department.name == department_name)
 
@@ -138,7 +162,7 @@ def list_active_by_department_name(
             )
         )
 
-    return query.order_by(User.full_name.asc(), User.id.asc()).all()
+    return query.order_by(role_rank_expr().asc(), User.full_name.asc(), User.id.asc()).all()
 
 
 def list_user_ids_by_department_ids(db: Session, department_ids: list[int]) -> list[int]:

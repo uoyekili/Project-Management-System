@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import List, Optional
 
-from sqlalchemy import desc, or_
+from sqlalchemy import desc, func, or_
 from sqlalchemy.orm import Session
 
 from app.models.logworks import LogWork
@@ -20,6 +20,10 @@ def get_task_by_id(db: Session, task_id: int) -> Optional[Task]:
 
 def get_tasks_by_parent_id(db: Session, parent_id: int) -> List[Task]:
     return db.query(Task).filter(Task.parent_task_id == parent_id).all()
+
+
+def has_children(db: Session, task_id: int) -> bool:
+    return db.query(Task.id).filter(Task.parent_task_id == task_id).first() is not None
 
 
 def involved_task_ids_query(db: Session, user_id: int):
@@ -236,6 +240,29 @@ def list_project_logworks_with_context(
             return []
         query = query.filter(Task.project_id.in_(project_ids))
     return query.order_by(desc(LogWork.work_date), desc(LogWork.updated_at), desc(LogWork.id)).all()
+
+
+def count_task_logworks(db: Session, task_id: int) -> int:
+    return db.query(LogWork).filter(LogWork.task_id == task_id).count()
+
+
+def sum_approved_logwork_hours(db: Session, task_id: int) -> float:
+    total = (
+        db.query(func.sum(LogWork.hours_spent))
+        .filter(LogWork.task_id == task_id, LogWork.status == "APPROVED")
+        .scalar()
+    )
+    return float(total or 0.0)
+
+
+def reassign_logworks(db: Session, from_task_id: int, to_task_id: int) -> int:
+    moved = (
+        db.query(LogWork)
+        .filter(LogWork.task_id == from_task_id)
+        .update({"task_id": to_task_id}, synchronize_session=False)
+    )
+    db.flush()
+    return moved
 
 
 def create_logwork(db: Session, logwork_data: dict) -> LogWork:

@@ -16,6 +16,7 @@ from app.schemas.task_schema import (
     TaskAttachmentResponse,
     TaskCommentCreate,
     TaskCommentResponse,
+    TaskCommentUpdate,
     TaskCreate,
     TaskResponse,
     TaskUpdate,
@@ -56,6 +57,8 @@ def _hydrate_task_list_response(db: Session, tasks: List[TaskResponse]):
         project_id = project_id_by_task_id.get(logwork.task_id)
         if project_id is not None:
             logworks_by_project_id[project_id].append(logwork)
+
+    parent_task_ids = {t.parent_task_id for t in all_project_tasks if t.parent_task_id is not None}
 
     for project_id in project_ids:
         project_tasks = [task for task in all_project_tasks if task.project_id == project_id]
@@ -99,6 +102,7 @@ def _hydrate_task_list_response(db: Session, tasks: List[TaskResponse]):
             if not task.deadline or calculated_deadline > task.deadline:
                 task.deadline = calculated_deadline
 
+        task.has_children = task.id in parent_task_ids
         task.assignees = assignees_by_task_id.get(task.id, [])
         task.key = f"TASK-{task.id}"
         if task.created_by_member_id not in creator_user_ids_by_member_id:
@@ -314,6 +318,28 @@ def create_task_comment(
     comment = task_comment_service.create_comment(db, task, current_user, comment_in.content)
     notifications = task_comment_service.notify_mentioned_users(
         db, task=task, comment=comment, author=current_user
+    )
+    _enqueue_notification_ws(background_tasks, notifications)
+    comment.user_name = current_user.full_name
+    return comment
+
+
+@router_root.put("/{task_id}/comments/{comment_id}", response_model=TaskCommentResponse)
+def update_task_comment(
+    task_id: int,
+    comment_id: int,
+    comment_in: TaskCommentUpdate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    task_service.get_task(db, task_id, current_user.id)
+    task = task_service.task_repository.get_task_by_id(db, task_id)
+    comment, newly_mentioned = task_comment_service.update_comment(
+        db, task, comment_id, current_user, comment_in.content
+    )
+    notifications = task_comment_service.notify_mentioned_users(
+        db, task=task, comment=comment, author=current_user, only_user_ids=newly_mentioned
     )
     _enqueue_notification_ws(background_tasks, notifications)
     comment.user_name = current_user.full_name

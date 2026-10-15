@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Iterable, Optional
 
 from fastapi import HTTPException, status
@@ -176,6 +176,53 @@ def enforce_project_type_rules(
         )
 
 
+MIGRATED_LOGWORK_TASK_PREFIX = "Phần đã thực hiện"
+
+
+def migrate_parent_logworks(
+    db: Session, parent: Task, actor_member_id: int, *, already_parent: bool = False
+) -> Optional[Task]:
+    """Task lá đang có logwork sắp trở thành task cha: chuyển logwork sang một task con.
+
+    Task cha chỉ là node tổng hợp (spent/estimate lấy từ task con), nên logwork trực tiếp
+    của nó sẽ bị bỏ qua nếu không được chuyển đi. Chỉ chạy khi `parent` chưa có con nào
+    và có ít nhất một logwork (mọi trạng thái). `already_parent=True` dành cho backfill dữ liệu
+    cũ: task đã có con nhưng vẫn giữ logwork trực tiếp. Trả về task con mới, hoặc None nếu không cần.
+    """
+    if not already_parent and task_repository.has_children(db, parent.id):
+        return None
+    if task_repository.count_task_logworks(db, parent.id) == 0:
+        return None
+
+    approved_hours = task_repository.sum_approved_logwork_hours(db, parent.id)
+    child = task_repository.create_task(
+        db,
+        {
+            "project_id": parent.project_id,
+            "sprint_id": parent.sprint_id,
+            "parent_task_id": parent.id,
+            "title": f"{MIGRATED_LOGWORK_TASK_PREFIX} - {parent.title}"[:255],
+            "description": (
+                "Task được tạo tự động khi task cha được chia nhỏ, chứa các logwork "
+                "đã ghi trước đó của task cha."
+            ),
+            "created_by_member_id": actor_member_id,
+            "status": "done",
+            "priority": parent.priority,
+            "start_date": parent.start_date,
+            "deadline": parent.deadline,
+            "estimated_hours": approved_hours,
+        },
+    )
+    child.completed_at = datetime.now(timezone.utc)
+    for assignee in task_repository.get_task_assignees(db, parent.id):
+        task_repository.add_task_assignee(
+            db, child.id, assignee.project_member_id, actor_member_id
+        )
+    task_repository.reassign_logworks(db, parent.id, child.id)
+    return child
+
+
 def _ensure_no_parent_cycle(db: Session, task_id: int, parent_task_id: Optional[int]):
     current_parent_id = parent_task_id
     visited = {task_id}
@@ -268,6 +315,10 @@ def create_task(db: Session, project_id: int, current_user_id: int, task_in: Tas
     _validate_parent_task(db, project_id, task_in.parent_task_id)
     _validate_assignees_within_parent(db, task_in.parent_task_id, assignee_ids)
 
+    if task_in.parent_task_id is not None:
+        parent_task = task_repository.get_task_by_id(db, task_in.parent_task_id)
+        migrate_parent_logworks(db, parent_task, actor_member.id)
+
     task_data = task_in.model_dump(exclude={"assignee_user_ids"})
     task_data["project_id"] = project_id
     task_data["created_by_member_id"] = actor_member.id
@@ -340,6 +391,10 @@ def update_task(db: Session, task_id: int, current_user_id: int, task_in: TaskUp
     _ensure_no_parent_cycle(db, task.id, parent_task_id)
     if "parent_task_id" in update_data:
         _validate_assignees_within_parent(db, parent_task_id, _assignee_user_ids(db, task.id))
+        if parent_task_id is not None and parent_task_id != task.parent_task_id:
+            new_parent = task_repository.get_task_by_id(db, parent_task_id)
+            actor_member = _require_actor_member(db, task.project_id, current_user_id)
+            migrate_parent_logworks(db, new_parent, actor_member.id)
 
     # Auto-update deadline based on estimated_hours change
     if "estimated_hours" in update_data and "deadline" not in update_data:
@@ -481,6 +536,12 @@ def add_logwork(db: Session, task_id: int, current_user_id: int, logwork_in: Log
         raise _denied("Bạn không có quyền tạo logwork.")
     if not task_repository.is_task_assignee(db, task.id, current_user_id):
         raise _denied("Bạn chỉ có thể ghi logwork cho task được giao cho mình.")
+
+    if task_repository.has_children(db, task.id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Task đã được chia nhỏ, hãy ghi logwork vào task con.",
+        )
 
     actor_member = _require_actor_member(db, task.project_id, current_user_id)
     logwork_data = logwork_in.model_dump()
