@@ -1,4 +1,4 @@
-# Tài khoản demo — TaskFlow
+# Tài khoản demo
 
 Mật khẩu tất cả tài khoản: `123456`
 

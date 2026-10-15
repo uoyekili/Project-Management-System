@@ -1,8 +1,5 @@
-# Production stack. Requires .env and backend/.env (cp .env.example .env; cp backend/.env.example backend/.env), then:
-#   docker compose -f docker-compose.prod.yml up -d --build
 name: taskflow-prod
 
-# Container-network overrides; everything else comes from backend/.env
 x-backend-env: &backend-env
   ENVIRONMENT: production
   BACKEND_WORKERS: ${BACKEND_WORKERS:?BACKEND_WORKERS is required in .env}
@@ -52,7 +49,6 @@ services:
 
   db-migrate:
     image: taskflow-backend:prod
-    # Built by the backend service; never pulled.
     pull_policy: never
     restart: "no"
     depends_on:
@@ -78,7 +74,6 @@ services:
       SEED_SQL_PATH: /seed/backup.sql
     volumes:
       - ./database:/seed:ro
-    # Strip CR in case the script was checked out with CRLF
     entrypoint: ["/bin/bash", "-c", "bash <(tr -d '\\r' < /seed/seed.sh)"]
 
   backend:
@@ -96,12 +91,12 @@ services:
       - ./backend/.env
     environment: *backend-env
     ports:
-      - "${BACKEND_HOST_PORT:-8000}:${BACKEND_PORT:-8000}"
+      - "${BACKEND_HOST_PORT:?BACKEND_HOST_PORT is required in .env}:${BACKEND_PORT:?BACKEND_PORT is required in .env}"
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:${BACKEND_PORT:-8000}/health', timeout=3).read()\"",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:${BACKEND_PORT}/health', timeout=3).read()\"",
         ]
       interval: 10s
       timeout: 5s
@@ -114,18 +109,17 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.prod
       args:
-        # Browser swaps localhost for the current hostname (services/api/core.ts).
-        NEXT_PUBLIC_API_BASE_URL: http://localhost:${BACKEND_HOST_PORT:-8000}
-        NEXT_PUBLIC_API_PORT: ${BACKEND_HOST_PORT:-8000}
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:?NEXT_PUBLIC_API_BASE_URL is required in .env}
+        NEXT_PUBLIC_API_PORT: ${BACKEND_HOST_PORT:?BACKEND_HOST_PORT is required in .env}
     restart: unless-stopped
     depends_on:
       backend:
         condition: service_healthy
     environment:
-      API_BASE_URL_INTERNAL: http://backend:${BACKEND_PORT:-8000}
-      PORT: ${FRONTEND_PORT:-3000}
+      API_BASE_URL_INTERNAL: http://backend:${BACKEND_PORT:?BACKEND_PORT is required in .env}
+      PORT: 3000
     ports:
-      - "${FRONTEND_HOST_PORT:-3000}:${FRONTEND_PORT:-3000}"
+      - "${FRONTEND_HOST_PORT:?FRONTEND_HOST_PORT is required in .env}:3000"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:$${PORT} >/dev/null 2>&1 || exit 1"]
       interval: 10s
