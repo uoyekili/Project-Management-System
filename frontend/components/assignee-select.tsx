@@ -115,7 +115,7 @@ export function AssigneeSelect({
             <input
               type="text"
               className="app-input"
-              placeholder={t("Tìm kiếm...")}
+              placeholder={t("Tìm kiếm")}
               aria-label={t("Tìm kiếm người dùng")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}

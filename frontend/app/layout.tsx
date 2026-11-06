@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import type { ReactNode } from "react";
 
@@ -21,6 +21,11 @@ export const metadata: Metadata = {
   applicationName: "TaskFlow",
   icons: { icon: "/icon.svg", shortcut: "/icon.svg", apple: "/icon.svg" },
   description: "TaskFlow - Hệ thống quản lý dự án nội bộ: dự án, công việc, nhật ký công và đội ngũ.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({

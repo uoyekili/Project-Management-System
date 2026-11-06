@@ -5,7 +5,7 @@
   gap: var(--space-4);
   width: 100%;
   max-width: 1440px;
-  margin-inline: auto;
+  margin-inline: 0;
 }
 
 .backButton {

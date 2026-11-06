@@ -70,7 +70,7 @@ const GROUPS: Array<{
   {
     key: "admin",
     label: "Quản trị hệ thống",
-    description: "Chỉ dành cho role quản trị; không kết hợp với quyền nghiệp vụ.",
+    description: "Chỉ dành cho vai trò quản trị; không kết hợp với quyền nghiệp vụ.",
     admin: true,
     resources: ["admin", "user", "department", "catalog", "role"],
   },

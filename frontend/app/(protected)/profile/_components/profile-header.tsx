@@ -103,7 +103,7 @@ export function ProfileHeader({ user, isSelf, onUpdate }: ProfileHeaderProps) {
             onClick={() => fileInputRef.current?.click()}
             disabled={isBusy}
           >
-            {isBusy ? t("Đang tải lên...") : t("Đổi ảnh đại diện")}
+            {isBusy ? t("Đang tải lên") : t("Đổi ảnh đại diện")}
           </button>
           {hasCustomAvatar ? (
             <button type="button" className="secondary-button" onClick={handleReset} disabled={isBusy}>

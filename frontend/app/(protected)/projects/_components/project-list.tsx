@@ -110,7 +110,7 @@ export function ProjectList({
               setSearchQuery(value);
               setPage(1);
             }}
-            placeholder={t("Tìm theo tên hoặc mã dự án...")}
+            placeholder={t("Tìm theo tên hoặc mã dự án")}
           />
         }
         activeCount={activeFilterCount + (searchQuery.trim() !== "" ? 1 : 0)}
@@ -130,7 +130,7 @@ export function ProjectList({
             multiple
             searchable
             showSelectAll={false}
-            searchPlaceholder={t("Tìm người quản lý...")}
+            searchPlaceholder={t("Tìm người quản lý")}
             value={managerFilter}
             onChange={(next) => {
               setManagerFilter(next);
@@ -216,9 +216,6 @@ export function ProjectList({
                       >
                         <td>
                           <div className={styles.userCellButton}>
-                            <span className={styles.avatarToken}>
-                              {project.name.charAt(0).toUpperCase()}
-                            </span>
                             <span className={styles.userCellCopy}>
                               <strong>{project.name}</strong>
                               <small>Manager: {project.managerName || t("Chưa rõ")}</small>

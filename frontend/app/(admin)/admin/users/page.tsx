@@ -7,15 +7,20 @@ import { ActionButton } from "@/components/action-button";
 import { FilterBar, FilterItem, FilterSearch } from "@/components/filter-bar";
 import { FilterSelect } from "@/components/filter-select";
 import { TableBodySkeleton } from "@/components/loading-state";
-import { Badge, EmptyState, StatusPill, Surface } from "@/components/ui";
-import { UserAvatar } from "@/components/user-avatar";
+import { TablePagination } from "@/components/table-pagination";
+import { Badge, StatusPill } from "@/components/ui";
 import { PERM } from "@/lib/permissions";
 import { adminApi } from "@/services/api";
 import type { AdminDepartment, AdminJobTitle, AdminRole, AdminUserList } from "@/types";
 import { formatEmployeeCode } from "@/lib/utils/employee";
 
-import teamStyles from "../../../(protected)/team/styles/team.module.css";
-import styles from "../_components/admin.module.css";
+import {
+  AdminListPage,
+  AdminListSurface,
+  AdminTable,
+  adminTableStyles,
+  AdminUserCell,
+} from "../_components/admin-table";
 import {
   EmptyDash,
   errorMessage,
@@ -24,8 +29,9 @@ import {
   useToast,
 } from "../_components/admin-ui";
 
-// Hiển thị toàn bộ người dùng, bảng tự cuộn bên trong (không phân trang).
-const PAGE_SIZE = 1000;
+// Tải toàn bộ người dùng một lần rồi phân trang phía client.
+const FETCH_SIZE = 1000;
+const PAGE_SIZE = 20;
 
 const STATUS_OPTIONS = [
   { value: "ACTIVE", label: "Hoạt động" },
@@ -55,6 +61,13 @@ function AdminUsersContent() {
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [roleFilter, setRoleFilter] = useState<string[]>([]);
   const [departmentFilter, setDepartmentFilter] = useState<string[]>([]);
+  const [page, setPage] = useState(1);
+
+  // Đổi bộ lọc thì quay về trang đầu.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- đặt lại trang khi bộ lọc đổi
+    setPage(1);
+  }, [debouncedSearch, departmentFilter, roleFilter, statusFilter]);
 
   useEffect(() => {
     Promise.all([adminApi.listDepartments(), adminApi.listJobTitles(), adminApi.listRoles()])
@@ -69,14 +82,14 @@ function AdminUsersContent() {
         department_ids: departmentFilter,
         role_ids: roleFilter,
         status: statusFilter,
-        page_size: PAGE_SIZE,
+        page_size: FETCH_SIZE,
       });
       setList(result);
     } catch (err) {
       toast.error(errorMessage(err));
       setList(
         (current) =>
-          current ?? { items: [], total: 0, page: 1, pageSize: PAGE_SIZE, totalPages: 1 },
+          current ?? { items: [], total: 0, page: 1, pageSize: FETCH_SIZE, totalPages: 1 },
       );
     }
   }, [debouncedSearch, departmentFilter, roleFilter, statusFilter, toast]);
@@ -108,9 +121,15 @@ function AdminUsersContent() {
   }
 
   const isLoading = list === null;
+  const items = list?.items ?? [];
+  const total = items.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const validPage = Math.min(page, totalPages);
+  const pageItems = items.slice((validPage - 1) * PAGE_SIZE, validPage * PAGE_SIZE);
 
   return (
-    <div className="filtered-list-page">
+    <AdminListPage
+      filters={
       <FilterBar
         search={
           <FilterSearch
@@ -136,7 +155,7 @@ function AdminUsersContent() {
             onChange={(value) => {
               setRoleFilter(value);
             }}
-            placeholder="Role"
+            placeholder="Vai trò"
             showSelectAll={false}
             options={lookups.roles.map((role) => ({ value: String(role.id), label: role.name }))}
           />
@@ -166,89 +185,90 @@ function AdminUsersContent() {
           />
         </FilterItem>
       </FilterBar>
-
-      <Surface className={`${teamStyles.tableSurface} ${styles.usersTable} filtered-list-table`}>
-        {isLoading || (list && list.items.length > 0) ? (
-          <>
-            <div className={`${teamStyles.tableWrap} table-scroll`}>
-              <table className={teamStyles.table}>
-                <thead>
-                  <tr>
-                    <th>Người dùng</th>
-                    <th>Email</th>
-                    <th>Chức danh</th>
-                    <th>Role</th>
-                    <th>Phòng ban</th>
-                    <th>Số điện thoại</th>
-                    <th>Ngày tạo</th>
-                    <th>Trạng thái</th>
-                    <th aria-label="Thao tác" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {!list ? (
-                    <TableBodySkeleton rows={10} columns={9} />
-                  ) : (
-                    list.items.map((user) => (
-                      <tr key={user.id}>
-                        <td>
-                          <div className={`${teamStyles.userCellButton} ${styles.staticCell}`}>
-                            <UserAvatar
-                              name={user.full_name}
-                              avatarUrl={user.avatar_url ?? undefined}
-                              size={24}
-                              className={teamStyles.avatarToken}
-                            />
-                            <span className={teamStyles.userCellCopy}>
-                              <strong>{user.full_name}</strong>
-                              <small>{formatEmployeeCode(user.id)}</small>
-                            </span>
-                          </div>
-                        </td>
-                        <td>{user.email}</td>
-                        <td>{user.job_title ? user.job_title.name : <EmptyDash />}</td>
-                        <td>
-                          {user.role ? (
-                            <Badge tone="accent">{user.role.name}</Badge>
-                          ) : (
-                            <EmptyDash />
-                          )}
-                        </td>
-                        <td>{user.is_admin ? null : user.department?.name}</td>
-                        <td>{user.phone_number || <EmptyDash />}</td>
-                        <td>{formatDate(user.created_at)}</td>
-                        <td>
-                          <StatusPill
-                            label={user.is_active ? "Hoạt động" : "Đã khóa"}
-                            tone={user.is_active ? "on-track" : "critical"}
-                          />
-                        </td>
-                        <td>
-                          <button
-                            type="button"
-                            className={`secondary-button ${teamStyles.detailButton}`}
-                            onClick={() => {
-                              router.push(`/admin/users/${user.id}`);
-                            }}
-                          >
-                            Chi tiết
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </>
-        ) : (
-          <EmptyState
-            title="Không tìm thấy người dùng phù hợp"
-            description="Thử đổi từ khóa tìm kiếm hoặc bỏ bớt bộ lọc để xem nhiều kết quả hơn."
-          />
-        )}
-      </Surface>
-    </div>
+      }
+    >
+      <AdminListSurface
+        hasContent={isLoading || total > 0}
+        emptyTitle="Không tìm thấy người dùng phù hợp"
+        emptyDescription="Thử đổi từ khóa tìm kiếm hoặc bỏ bớt bộ lọc để xem nhiều kết quả hơn."
+        footer={
+          !isLoading && total > 0 ? (
+            <TablePagination
+              page={validPage}
+              pageSize={PAGE_SIZE}
+              total={total}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              itemLabel="người dùng"
+            />
+          ) : null
+        }
+      >
+        <AdminTable>
+          <thead>
+            <tr>
+              <th>Người dùng</th>
+              <th>Email</th>
+              <th data-priority="low">Chức danh</th>
+              <th>Vai trò</th>
+              <th>Phòng ban</th>
+              <th data-priority="low">Số điện thoại</th>
+              <th data-priority="low">Ngày tạo</th>
+              <th>Trạng thái</th>
+              <th data-actions aria-label="Thao tác" />
+            </tr>
+          </thead>
+          <tbody>
+            {!list ? (
+              <TableBodySkeleton rows={10} columns={9} />
+            ) : (
+              pageItems.map((user) => (
+                <tr key={user.id}>
+                  <td data-primary data-label="Người dùng">
+                    <AdminUserCell
+                      name={user.full_name}
+                      subtitle={formatEmployeeCode(user.id)}
+                      avatarUrl={user.avatar_url}
+                    />
+                  </td>
+                  <td data-label="Email">{user.email}</td>
+                  <td data-priority="low" data-label="Chức danh">
+                    {user.job_title ? user.job_title.name : <EmptyDash />}
+                  </td>
+                  <td data-label="Vai trò">
+                    {user.role ? <Badge tone="accent">{user.role.name}</Badge> : <EmptyDash />}
+                  </td>
+                  <td data-label="Phòng ban">{user.is_admin ? null : user.department?.name}</td>
+                  <td data-priority="low" data-label="Số điện thoại">
+                    {user.phone_number || <EmptyDash />}
+                  </td>
+                  <td data-priority="low" data-label="Ngày tạo">
+                    {formatDate(user.created_at)}
+                  </td>
+                  <td data-label="Trạng thái">
+                    <StatusPill
+                      label={user.is_active ? "Hoạt động" : "Đã khóa"}
+                      tone={user.is_active ? "on-track" : "critical"}
+                    />
+                  </td>
+                  <td data-actions>
+                    <button
+                      type="button"
+                      className={`secondary-button ${adminTableStyles.actionButton}`}
+                      onClick={() => {
+                        router.push(`/admin/users/${user.id}`);
+                      }}
+                    >
+                      Chi tiết
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </AdminTable>
+      </AdminListSurface>
+    </AdminListPage>
   );
 }
 

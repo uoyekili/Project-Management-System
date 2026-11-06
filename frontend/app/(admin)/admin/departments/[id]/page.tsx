@@ -14,7 +14,6 @@ import { PERM } from "@/lib/permissions";
 import { adminApi } from "@/services/api";
 import type { AdminDepartment, AdminUser } from "@/types";
 
-import teamStyles from "../../../../(protected)/team/styles/team.module.css";
 import styles from "../../_components/admin.module.css";
 import {
   EmptyDash,
@@ -24,7 +23,15 @@ import {
   useAdminTitle,
   useToast,
 } from "../../_components/admin-ui";
+import {
+  AdminListPage,
+  AdminListSurface,
+  AdminTable,
+  adminTableStyles,
+} from "../../_components/admin-table";
+import { AdminDetailActions, AdminDetailTopbar } from "../../_components/admin-detail-header";
 import { MemberPicker } from "../../_components/member-picker";
+import { useUnsavedChanges } from "../../_components/use-unsaved-changes";
 
 function DepartmentDetail({ departmentId }: { departmentId: number }) {
   const router = useRouter();
@@ -50,6 +57,7 @@ function DepartmentDetail({ departmentId }: { departmentId: number }) {
     editing && department
       ? name.trim() !== department.name || description.trim() !== (department.description ?? "")
       : false;
+  const { discardChanges } = useUnsavedChanges(dirty);
 
   const load = useCallback(async () => {
     try {
@@ -76,32 +84,12 @@ function DepartmentDetail({ departmentId }: { departmentId: number }) {
     void load();
   }, [load]);
 
-  useEffect(() => {
-    if (!dirty) return;
-    const handler = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [dirty]);
-
   function startEdit() {
     if (!department) return;
     setName(department.name);
     setDescription(department.description ?? "");
     setFormError(null);
     setEditing(true);
-  }
-
-  async function discardChanges(): Promise<boolean> {
-    if (!dirty) return true;
-    return confirm({
-      title: "Bỏ thay đổi chưa lưu?",
-      message: "Các thay đổi sẽ bị mất.",
-      confirmLabel: "Bỏ thay đổi",
-      tone: "danger",
-    });
   }
 
   async function cancelEdit() {
@@ -208,45 +196,23 @@ function DepartmentDetail({ departmentId }: { departmentId: number }) {
   }
 
   return (
-    <div className="filtered-list-page">
-      <div className={styles.detailTopbar}>
-        <BackButton href="/admin/departments" onClick={(event) => void leave(event)} />
-        <div className={styles.detailTopbarActions}>
-          {editing ? (
-            <>
-              <button
-                type="button"
-                className="secondary-button"
-                disabled={saving}
-                onClick={() => void cancelEdit()}
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                className="primary-button"
-                disabled={saving || !dirty}
-                onClick={() => void handleSave()}
-              >
-                {saving ? "Đang lưu..." : "Lưu thay đổi"}
-              </button>
-            </>
-          ) : (
-            <>
-              <ActionButton
-                kind="delete"
-                disabled={!department}
-                onClick={() => void handleDelete()}
-              >
-                Xóa
-              </ActionButton>
-              <ActionButton kind="edit" disabled={!department} onClick={startEdit}>
-                Chỉnh sửa
-              </ActionButton>
-            </>
-          )}
-        </div>
-      </div>
+    <AdminListPage
+      filters={
+        <>
+      <AdminDetailTopbar
+        back={<BackButton href="/admin/departments" onClick={(event) => void leave(event)} />}
+      >
+        <AdminDetailActions
+          editing={editing}
+          saving={saving}
+          canSave={dirty}
+          disabled={!department}
+          onEdit={startEdit}
+          onCancel={() => void cancelEdit()}
+          onSave={() => void handleSave()}
+          onDelete={() => void handleDelete()}
+        />
+      </AdminDetailTopbar>
 
       <Surface className={styles.infoCard}>
         <div className={styles.infoCardHead}>
@@ -323,64 +289,62 @@ function DepartmentDetail({ departmentId }: { departmentId: number }) {
         }
       />
 
-      <Surface className={`${teamStyles.tableSurface} filtered-list-table`}>
-        {!members || visibleMembers.length > 0 ? (
-          <div className={`${teamStyles.tableWrap} table-scroll`}>
-            <table className={teamStyles.table}>
-              <thead>
-                <tr>
-                  <th>Thành viên</th>
-                  <th>Chức danh</th>
-                  <th>Role</th>
-                  {editing ? <th aria-label="Thao tác" /> : null}
+        </>
+      }
+    >
+      <AdminListSurface
+        hasContent={!members || visibleMembers.length > 0}
+        emptyTitle={search ? "Không tìm thấy thành viên phù hợp" : "Phòng ban chưa có thành viên"}
+        emptyDescription={
+          search ? "Thử đổi từ khóa tìm kiếm." : "Bấm Chỉnh sửa rồi chọn Thêm thành viên."
+        }
+      >
+        <AdminTable>
+          <thead>
+            <tr>
+              <th>Thành viên</th>
+              <th>Chức danh</th>
+              <th>Vai trò</th>
+              {editing ? <th data-actions aria-label="Thao tác" /> : null}
+            </tr>
+          </thead>
+          <tbody>
+            {!members ? (
+              <TableBodySkeleton rows={6} columns={editing ? 4 : 3} />
+            ) : (
+              visibleMembers.map((user) => (
+                <tr key={user.id}>
+                  <td data-primary data-label="Thành viên">
+                    <UserCell
+                      id={user.id}
+                      name={user.full_name}
+                      email={user.email}
+                      avatarUrl={user.avatar_url}
+                    />
+                  </td>
+                  <td data-label="Chức danh">{user.job_title?.name ?? <EmptyDash />}</td>
+                  <td data-label="Vai trò">{user.role?.name ?? <EmptyDash />}</td>
+                  {editing ? (
+                    <td data-actions>
+                      <div className={styles.rowActions}>
+                        <button
+                          type="button"
+                          className={`secondary-button ${styles.dangerOutline} ${adminTableStyles.actionButton}`}
+                          onClick={() => {
+                            void handleRemove(user);
+                          }}
+                        >
+                          Gỡ
+                        </button>
+                      </div>
+                    </td>
+                  ) : null}
                 </tr>
-              </thead>
-              <tbody>
-                {!members ? (
-                  <TableBodySkeleton rows={6} columns={editing ? 4 : 3} />
-                ) : (
-                  visibleMembers.map((user) => (
-                    <tr key={user.id}>
-                      <td>
-                        <UserCell
-                          id={user.id}
-                          name={user.full_name}
-                          email={user.email}
-                          avatarUrl={user.avatar_url}
-                        />
-                      </td>
-                      <td>{user.job_title?.name ?? <EmptyDash />}</td>
-                      <td>{user.role?.name ?? <EmptyDash />}</td>
-                      {editing ? (
-                        <td>
-                          <div className={styles.rowActions}>
-                            <button
-                              type="button"
-                              className={`secondary-button ${styles.dangerOutline} ${teamStyles.detailButton}`}
-                              onClick={() => {
-                                void handleRemove(user);
-                              }}
-                            >
-                              Gỡ
-                            </button>
-                          </div>
-                        </td>
-                      ) : null}
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <EmptyState
-            title={search ? "Không tìm thấy thành viên phù hợp" : "Phòng ban chưa có thành viên"}
-            description={
-              search ? "Thử đổi từ khóa tìm kiếm." : "Bấm Chỉnh sửa rồi chọn Thêm thành viên."
-            }
-          />
-        )}
-      </Surface>
+              ))
+            )}
+          </tbody>
+        </AdminTable>
+      </AdminListSurface>
 
       {addOpen ? (
         <Modal
@@ -412,13 +376,13 @@ function DepartmentDetail({ departmentId }: { departmentId: number }) {
                 disabled={selected.size === 0 || adding}
                 onClick={() => void handleAdd()}
               >
-                {adding ? "Đang thêm..." : `Thêm${selected.size ? ` (${selected.size})` : ""}`}
+                {adding ? "Đang thêm" : `Thêm${selected.size ? ` (${selected.size})` : ""}`}
               </button>
             </footer>
           </div>
         </Modal>
       ) : null}
-    </div>
+    </AdminListPage>
   );
 }
 

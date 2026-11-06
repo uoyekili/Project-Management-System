@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { ActionButton } from "@/components/action-button";
 import { BackButton } from "@/components/back-button";
 import { useConfirmDialog } from "@/components/confirm-dialog";
 import { Tabs } from "@/components/tabs";
@@ -13,8 +12,10 @@ import { PERM } from "@/lib/permissions";
 import { adminApi } from "@/services/api";
 import type { AdminPermission, AdminRole, AdminRoleMember, PermissionScope } from "@/types";
 
-import teamStyles from "../../../../(protected)/team/styles/team.module.css";
 import styles from "../../_components/admin.module.css";
+import { AdminDetailActions, AdminDetailTopbar } from "../../_components/admin-detail-header";
+import { AdminTable, adminTableStyles } from "../../_components/admin-table";
+import { useUnsavedChanges } from "../../_components/use-unsaved-changes";
 import {
   EmptyDash,
   errorMessage,
@@ -79,6 +80,7 @@ function RoleDetail({ roleId }: { roleId: number }) {
       ? formName.trim() !== role.name || formDescription.trim() !== (role.description ?? "")
       : false;
   const dirty = editing && (changedCount > 0 || infoChanged);
+  const { discardChanges } = useUnsavedChanges(dirty);
 
   const visibleGroups = useMemo(
     () => matrix.filter((group) => (isAdminRole ? group.admin : !group.admin)),
@@ -119,17 +121,6 @@ function RoleDetail({ roleId }: { roleId: number }) {
     };
   }, [roleId, usageCount]);
 
-  // Cảnh báo khi đóng tab / tải lại với thay đổi chưa lưu.
-  useEffect(() => {
-    if (!dirty) return;
-    const handler = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [dirty]);
-
   function isLocked(row: MatrixRow) {
     return Boolean(role?.is_system && isAdminRole && LOCKED_FOR_ADMIN_ROLE.has(row.key));
   }
@@ -145,28 +136,14 @@ function RoleDetail({ roleId }: { roleId: number }) {
   }
 
   async function cancelEdit() {
-    if (dirty) {
-      const ok = await confirm({
-        title: "Bỏ thay đổi chưa lưu?",
-        message: "Các thay đổi sẽ bị mất.",
-        confirmLabel: "Bỏ thay đổi",
-        tone: "danger",
-      });
-      if (!ok) return;
-    }
+    if (!(await discardChanges())) return;
     setEditing(false);
   }
 
   async function leave(event: React.MouseEvent) {
     if (!dirty) return;
     event.preventDefault();
-    const ok = await confirm({
-      title: "Bỏ thay đổi chưa lưu?",
-      message: "Các thay đổi chưa lưu sẽ bị mất.",
-      confirmLabel: "Rời trang",
-      tone: "danger",
-    });
-    if (ok) router.push("/admin/roles");
+    if (await discardChanges()) router.push("/admin/roles");
   }
 
   function setRowScope(row: MatrixRow, scope: PermissionScope | null) {
@@ -196,7 +173,7 @@ function RoleDetail({ roleId }: { roleId: number }) {
   async function handleSave() {
     if (!role) return;
     if (!formName.trim()) {
-      setFormError("Vui lòng nhập tên role.");
+      setFormError("Vui lòng nhập tên vai trò.");
       return;
     }
     setSaving(true);
@@ -227,23 +204,23 @@ function RoleDetail({ roleId }: { roleId: number }) {
     if (!role) return;
     if (role.usage_count > 0) {
       const view = await confirm({
-        title: "Chưa thể xóa role",
-        message: `Role còn ${role.usage_count} người dùng. Hãy chuyển họ sang role khác trước.`,
+        title: "Chưa thể xóa vai trò",
+        message: `Vai trò còn ${role.usage_count} người dùng. Hãy chuyển họ sang vai trò khác trước.`,
         confirmLabel: "Xem người dùng",
       });
       if (view) setTab("members");
       return;
     }
     const ok = await confirm({
-      title: "Xóa role",
-      message: `Xóa role "${role.name}"? Thao tác không thể hoàn tác.`,
-      confirmLabel: "Xóa role",
+      title: "Xóa vai trò",
+      message: `Xóa vai trò "${role.name}"? Thao tác không thể hoàn tác.`,
+      confirmLabel: "Xóa vai trò",
       tone: "danger",
     });
     if (!ok) return;
     try {
       await adminApi.deleteRole(role.id);
-      toast.success("Đã xóa role.");
+      toast.success("Đã xóa vai trò.");
       router.push("/admin/roles");
     } catch (err) {
       toast.error(errorMessage(err));
@@ -256,7 +233,7 @@ function RoleDetail({ roleId }: { roleId: number }) {
     return (
       <div className={styles.detailPage}>
         <div className={styles.detailTopbar}>{backLink}</div>
-        <EmptyState title="Không tìm thấy role" description="Role có thể đã bị xóa." />
+        <EmptyState title="Không tìm thấy vai trò" description="Vai trò có thể đã bị xóa." />
       </div>
     );
   }
@@ -270,40 +247,17 @@ function RoleDetail({ roleId }: { roleId: number }) {
 
   return (
     <div className={styles.detailPage}>
-      <div className={styles.detailTopbar}>
-        {backLink}
-        <div className={styles.detailTopbarActions}>
-          {editing ? (
-            <>
-              <button
-                type="button"
-                className="danger-button"
-                disabled={saving}
-                onClick={() => void cancelEdit()}
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                className="primary-button"
-                disabled={saving || !dirty}
-                onClick={() => void handleSave()}
-              >
-                {saving ? "Đang lưu..." : "Lưu thay đổi"}
-              </button>
-            </>
-          ) : (
-            <>
-              <ActionButton kind="delete" onClick={() => void handleDelete()}>
-                Xóa
-              </ActionButton>
-              <ActionButton kind="edit" onClick={startEdit}>
-                Chỉnh sửa
-              </ActionButton>
-            </>
-          )}
-        </div>
-      </div>
+      <AdminDetailTopbar back={backLink}>
+        <AdminDetailActions
+          editing={editing}
+          saving={saving}
+          canSave={dirty}
+          onEdit={startEdit}
+          onCancel={() => void cancelEdit()}
+          onSave={() => void handleSave()}
+          onDelete={() => void handleDelete()}
+        />
+      </AdminDetailTopbar>
 
       <div className={styles.roleTopGrid}>
         <Surface className={styles.infoCard}>
@@ -312,7 +266,7 @@ function RoleDetail({ roleId }: { roleId: number }) {
           </div>
           {editing ? (
             <label className="app-field">
-              <span className="app-label">Tên role</span>
+              <span className="app-label">Tên vai trò</span>
               <input
                 className={`app-input ${styles.plainInput}`}
                 value={formName}
@@ -322,7 +276,7 @@ function RoleDetail({ roleId }: { roleId: number }) {
           ) : (
             <dl className={styles.infoGrid}>
               <div className={styles.infoItem}>
-                <dt>Tên role</dt>
+                <dt>Tên vai trò</dt>
                 <dd>{role.name}</dd>
               </div>
               <div className={styles.infoItem}>
@@ -369,7 +323,7 @@ function RoleDetail({ roleId }: { roleId: number }) {
             ]}
             activeTab={tab}
             onTabChange={setTab}
-            ariaLabel="Chi tiết role"
+            ariaLabel="Chi tiết vai trò"
           />
 
           {tab === "permissions" ? (
@@ -393,35 +347,35 @@ function RoleDetail({ roleId }: { roleId: number }) {
               {members && members.length === 0 ? (
                 <EmptyState
                   title="Chưa có người dùng nào"
-                  description="Gán role này khi cấp hoặc sửa tài khoản."
+                  description="Gán vai trò này khi cấp hoặc sửa tài khoản."
                 />
               ) : (
-                <div className={`${teamStyles.tableWrap} table-scroll`}>
-                  <table className={teamStyles.table}>
+                <div className="table-scroll">
+                  <AdminTable>
                     <thead>
                       <tr>
                         <th>Người dùng</th>
                         <th>Chức danh</th>
                         <th>Phòng ban</th>
-                        <th aria-label="Thao tác" />
+                        <th data-actions aria-label="Thao tác" />
                       </tr>
                     </thead>
                     <tbody>
                       {(members ?? []).map((member) => (
                         <tr key={member.id}>
-                          <td>
+                          <td data-primary data-label="Người dùng">
                             <span className={styles.roleNameCell}>
                               <strong>{member.full_name}</strong>
                               <small>{member.email}</small>
                             </span>
                           </td>
-                          <td>{member.job_title ?? <EmptyDash />}</td>
-                          <td>{member.department ?? <EmptyDash />}</td>
-                          <td>
+                          <td data-label="Chức danh">{member.job_title ?? <EmptyDash />}</td>
+                          <td data-label="Phòng ban">{member.department ?? <EmptyDash />}</td>
+                          <td data-actions>
                             <div className={styles.rowActions}>
                               <Link
                                 href={`/admin/users/${member.id}`}
-                                className={`secondary-button ${teamStyles.detailButton}`}
+                                className={`secondary-button ${adminTableStyles.actionButton}`}
                               >
                                 Chi tiết
                               </Link>
@@ -430,7 +384,7 @@ function RoleDetail({ roleId }: { roleId: number }) {
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </AdminTable>
                 </div>
               )}
             </div>

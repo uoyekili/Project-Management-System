@@ -211,7 +211,7 @@ export function HeaderMultiFilter({
   value,
   onChange,
   searchable = false,
-  searchPlaceholder = t("Tìm..."),
+  searchPlaceholder = t("Tìm"),
   minWidth,
 }: {
   label: string;

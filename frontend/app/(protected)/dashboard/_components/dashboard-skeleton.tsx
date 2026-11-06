@@ -2,7 +2,7 @@ import styles from "../styles/dashboard.module.css";
 import { t } from "@/lib/i18n";
 
 /** Skeleton khớp bố cục thật: KPI → cảnh báo → phân tích → hành động. */
-export function DashboardSkeleton({ label = t("Đang tải dữ liệu tổng quan...") }: { label?: string }) {
+export function DashboardSkeleton({ label = t("Đang tải dữ liệu tổng quan") }: { label?: string }) {
   const card = (className: string, rows = 4) => (
     <div className={`${styles.card} ${className}`}>
       <span className={`${styles.skel} ${styles.skelTitle}`} />

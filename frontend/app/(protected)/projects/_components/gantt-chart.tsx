@@ -1152,7 +1152,7 @@ export function GanttChart({ tasks, onTaskClick, onAddSubtask, isLoading = false
                   value={assigneeFilter}
                   onChange={setAssigneeFilter}
                   searchable
-                  searchPlaceholder={tr("Tìm theo tên hoặc mã nhân viên...")}
+                  searchPlaceholder={tr("Tìm theo tên hoặc mã nhân viên")}
                   minWidth={360}
                 />
               </div>

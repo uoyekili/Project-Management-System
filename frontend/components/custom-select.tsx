@@ -37,7 +37,7 @@ export function CustomSelect({
   value,
   onChange,
   options,
-  placeholder = t("Chọn..."),
+  placeholder = t("Chọn"),
   style,
   className,
   disabled,

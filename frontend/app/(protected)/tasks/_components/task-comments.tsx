@@ -427,7 +427,7 @@ export function TaskComments({
                             onClick={() => void saveEdit(comment)}
                             disabled={isSavingEdit || !editText.trim()}
                           >
-                            {isSavingEdit ? t("Đang lưu...") : t("Lưu")}
+                            {isSavingEdit ? t("Đang lưu") : t("Lưu")}
                           </button>
                         </div>
                       </div>
@@ -454,7 +454,7 @@ export function TaskComments({
               ref={textareaRef}
               className={`app-input ${styles.textarea}`}
               aria-label={t("Viết bình luận")}
-              placeholder={t("Viết bình luận...")}
+              placeholder={t("Viết bình luận")}
               value={text}
               rows={3}
               disabled={isSending}

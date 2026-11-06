@@ -27,7 +27,7 @@ export const TaskDescription = memo(function TaskDescription({
             value={text}
             disabled={disabled}
             onChange={(event) => onChange(event.target.value)}
-            placeholder={t("Mô tả mục tiêu, phạm vi và tiêu chí hoàn thành...")}
+            placeholder={t("Mô tả mục tiêu, phạm vi và tiêu chí hoàn thành")}
           />
           <div className={styles.charCount}>
             {text.length} {t("ký tự")}

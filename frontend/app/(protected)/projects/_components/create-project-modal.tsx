@@ -105,7 +105,7 @@ export function CreateProjectModal({
                   className="app-input"
                   value={newProjectName}
                   onChange={(event) => setNewProjectName(event.target.value)}
-                  placeholder={t("Nhập tên dự án...")}
+                  placeholder={t("Nhập tên dự án")}
                   required
                 />
               </div>
@@ -154,7 +154,7 @@ export function CreateProjectModal({
                   className="app-input"
                   value={newProjectDescription}
                   onChange={(event) => setNewProjectDescription(event.target.value)}
-                  placeholder={t("Mô tả mục tiêu và phạm vi của dự án...")}
+                  placeholder={t("Mô tả mục tiêu và phạm vi của dự án")}
                   required
                   rows={4}
                 />
@@ -193,7 +193,7 @@ export function CreateProjectModal({
 
           <div className="app-modal-footer">
             <button type="submit" className="primary-button" disabled={isSubmitting} data-testid="create-project-submit">
-              {isSubmitting ? t("Đang tạo...") : t("Tạo dự án")}
+              {isSubmitting ? t("Đang tạo") : t("Tạo dự án")}
             </button>
           </div>
       </form>

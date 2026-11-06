@@ -43,7 +43,7 @@ export function MemberFilters({
         <FilterSearch
           value={searchQuery}
           onChange={onSearchChange}
-          placeholder={t("Tìm theo tên hoặc mã nhân viên...")}
+          placeholder={t("Tìm theo tên hoặc mã nhân viên")}
           ariaLabel={t("Tìm kiếm thành viên")}
         />
       }
@@ -54,7 +54,7 @@ export function MemberFilters({
         <FilterSelect
           multiple
           searchable
-          searchPlaceholder={t("Tìm vai trò...")}
+          searchPlaceholder={t("Tìm vai trò")}
           showSelectAll={false}
           menuMinWidth={240}
           value={roleFilter}

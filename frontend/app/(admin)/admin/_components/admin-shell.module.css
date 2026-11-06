@@ -1,0 +1,191 @@
+/* Khung admin: lưới shell, topbar, vùng nội dung và ngăn kéo điều hướng trên điện thoại.
+   Sidebar và nav-link dùng class dùng chung của ứng dụng (styles/components.css); phần ghi đè
+   cho ngăn kéo nằm ở đây, có phạm vi trong .shell để không ảnh hưởng trang khác.
+   Thang breakpoint của admin: 1280, 1024, 768, 480. */
+
+.main {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+/* Cao hơn dropdown (100) để menu tài khoản không bị che bởi thanh lọc và bảng bên dưới,
+   thấp hơn modal (200) và toast (300). */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-shrink: 0;
+  min-height: var(--topbar-height);
+  padding: 0 var(--space-6);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.topbarLead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.topbarTitle {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-heading-page);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menuButton {
+  display: none;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  color: var(--color-text);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.menuButton:hover {
+  background: var(--color-surface-muted);
+}
+
+.menuButton:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.menuButton svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Khung nội dung cố định theo viewport: trang danh sách (filtered-list-page) chỉ cuộn bên trong bảng. */
+.content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+  min-height: 0;
+  padding: var(--header-content-gap) var(--content-padding) var(--content-padding);
+  overflow-y: auto;
+}
+
+.content > * {
+  flex-shrink: 0;
+}
+
+.content > :global(.filtered-list-page) {
+  flex: 1 1 auto;
+  flex-shrink: 1;
+}
+
+.overlay {
+  display: none;
+}
+
+/* ───────── Tablet dọc và điện thoại: sidebar thành ngăn kéo ───────── */
+@media (max-width: 768px) {
+  .shell.shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .main {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .topbar {
+    padding: 0 var(--space-4);
+  }
+
+  .menuButton {
+    display: inline-flex;
+  }
+
+  .content {
+    padding: var(--space-4);
+  }
+
+  .shell.shell > :global(.sidebar) {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 400;
+    width: min(280px, 85vw);
+    height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    visibility: hidden;
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-md);
+    transition:
+      transform 200ms ease,
+      visibility 0s linear 200ms;
+  }
+
+  .shell.shell > :global(.sidebar).drawerOpen {
+    visibility: visible;
+    transform: none;
+    transition: transform 200ms ease;
+  }
+
+  /* Ngăn kéo luôn hiện đầy đủ nhãn, dọc, vùng chạm 44px. */
+  .shell :global(.sidebar-nav) {
+    flex-direction: column;
+    max-width: none;
+    padding-bottom: 0;
+    overflow: visible;
+  }
+
+  .shell :global(.nav-link) {
+    flex: none;
+    min-width: 0;
+    min-height: 44px;
+  }
+
+  .shell :global(.sidebar-footer) {
+    display: none;
+  }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 399;
+    display: block;
+    background: rgb(15 23 42 / 45%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease;
+  }
+
+  .overlayVisible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell.shell > :global(.sidebar),
+  .overlay {
+    transition: none;
+  }
+}

@@ -91,7 +91,7 @@ export function ChangePasswordForm({ session }: { session: AuthSession | null })
 
       <div>
         <button type="submit" className="action-button action-button-add" disabled={isSaving}>
-          {isSaving ? t("Đang cập nhật...") : t("Cập nhật mật khẩu")}
+          {isSaving ? t("Đang cập nhật") : t("Cập nhật mật khẩu")}
         </button>
       </div>
     </form>

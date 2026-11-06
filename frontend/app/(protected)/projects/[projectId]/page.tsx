@@ -277,7 +277,7 @@ export default function ProjectDetailPage() {
     <WorkspaceShell
       shellData={shellData}
       heading={state?.project.name ?? t("Chi tiết dự án")}
-      subheading={state?.project.code ?? t("Đang tải dữ liệu...")}
+      subheading={state?.project.code ?? t("Đang tải dữ liệu")}
       highlightLabel={t("Số lượng Task")}
       highlightValue={`${state?.tasks.length ?? 0}`}
       fillViewport
@@ -324,11 +324,11 @@ export default function ProjectDetailPage() {
                         kind="add"
                         onClick={() => router.push(`/projects/${projectId}/tasks/new`)}
                       >
-                        {t("Tạo Task mới")}</ActionButton>
+                        {t("Tạo task")}</ActionButton>
                     ) : null}
-                    {state.project.projectType === "agile" && (
+                    {activeTab === "gantt" && state.project.projectType === "agile" && (
                       <ActionButton kind="add" onClick={() => setIsCreateSprintModalOpen(true)}>
-                        {t("Tạo Sprint mới")}</ActionButton>
+                        {t("Tạo sprint")}</ActionButton>
                     )}
                   </>
                 ) : undefined
@@ -395,6 +395,8 @@ export default function ProjectDetailPage() {
                   sprints={state?.sprints}
                   selectedSprintId={selectedSprintId}
                   viewerId={String(viewer.id)}
+                  project={state?.project}
+                  onCreateSprint={() => setIsCreateSprintModalOpen(true)}
                   onSelectedSprintIdChange={handleSelectedSprintIdChange}
                   onTaskClick={openTask}
                   onEditSprint={(sprintId) => {

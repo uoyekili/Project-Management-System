@@ -147,7 +147,7 @@ export function CreateSprintModal({
               data-testid="sprint-goal"
               value={goal}
               onChange={(e) => setGoal(e.target.value)}
-              placeholder={t("VD: Hoàn thiện tính năng đăng nhập...")}
+              placeholder={t("VD: Hoàn thiện tính năng đăng nhập")}
               rows={3}
               disabled={!!sprintToEdit && !canManage}
             />
@@ -201,7 +201,7 @@ export function CreateSprintModal({
                 className="primary-button"
                 disabled={isLoading || !name.trim() || !startDate || !endDate}
               >
-                {isLoading ? t("Đang lưu...") : sprintToEdit ? t("Cập nhật Sprint") : t("Tạo Sprint")}
+                {isLoading ? t("Đang lưu") : sprintToEdit ? t("Cập nhật Sprint") : t("Tạo Sprint")}
               </button>
             )}
         </div>

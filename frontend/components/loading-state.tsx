@@ -95,7 +95,7 @@ function CardsSkeleton({ rows }: { rows: number }) {
 
 export function LoadingState({
   variant = "spinner",
-  label = t("Đang tải dữ liệu..."),
+  label = t("Đang tải dữ liệu"),
   rows,
   className,
 }: LoadingStateProps) {

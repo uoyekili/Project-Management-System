@@ -196,7 +196,9 @@ export function useTaskDetail({
 
   function goToProject() {
     if (!task?.projectId) return;
-    router.push(`/projects/${task.projectId}?tab=${isWaterfall ? "gantt" : "kanban"}`);
+    const tab = isWaterfall ? "gantt" : "kanban";
+    // Kèm highlightTaskId để Kanban hoặc Gantt cuộn tới và nháy sáng đúng task vừa xem.
+    router.push(`/projects/${task.projectId}?tab=${tab}&highlightTaskId=${task.id}&highlightColor=blue`);
   }
 
   async function deleteTask() {

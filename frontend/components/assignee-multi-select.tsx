@@ -30,7 +30,7 @@ export function AssigneeMultiSelect({
   options,
   knownUsers = [],
   disabled,
-  placeholder = t("Thêm người thực hiện..."),
+  placeholder = t("Thêm người thực hiện"),
 }: AssigneeMultiSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");

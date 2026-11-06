@@ -107,7 +107,7 @@ export function ProfileContact({ user, isSelf, onUpdate }: ProfileContactProps) 
               className={styles.phoneSave}
               disabled={isSaving}
             >
-              {isSaving ? t("Đang lưu...") : t("Lưu")}
+              {isSaving ? t("Đang lưu") : t("Lưu")}
             </button>
             <button
               type="button"

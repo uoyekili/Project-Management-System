@@ -48,7 +48,7 @@ export const TaskDetailHeader = memo(function TaskDetailHeader({
                 {t("Hủy")}
               </ActionButton>
               <ActionButton kind="save" onClick={() => void actions.saveEditing()} disabled={isSaving}>
-                {isSaving ? t("Đang lưu...") : t("Lưu thay đổi")}
+                {isSaving ? t("Đang lưu") : t("Lưu thay đổi")}
               </ActionButton>
             </>
           ) : (
@@ -82,7 +82,7 @@ export const TaskDetailHeader = memo(function TaskDetailHeader({
               id="task-detail-title-input"
               autoFocus
               className={`app-input ${styles.titleInput}`}
-              placeholder={t("Nhập tên công việc...")}
+              placeholder={t("Nhập tên công việc")}
               value={draftTitle}
               onChange={(event) => actions.patchDraft({ title: event.target.value })}
             />

@@ -2,8 +2,10 @@ import { useToast } from "@/components/toast";
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { taskApi, sprintApi } from "@/services/api";
-import { EnrichedTask, Sprint } from "@/types";
+import { EnrichedTask, Project, Sprint } from "@/types";
+import { projectScope, SCOPE_RANK } from "@/lib/permissions";
 import { TaskPriorityBadge } from "@/components/ui";
+import { ActionButton } from "@/components/action-button";
 import { UserAvatar } from "@/components/user-avatar";
 import { FilterSelect, type FilterOption } from "@/components/filter-select";
 import { LoadingState } from "@/components/loading-state";
@@ -18,7 +20,11 @@ interface ProjectKanbanBoardProps {
   sprints?: Sprint[];
   selectedSprintId?: string | null;
   viewerId: string;
+  /** Quyền của người xem trong dự án (myPermissions) để quyết định task nào được kéo thả. */
+  project?: Pick<Project, "myPermissions"> | null;
   onTaskUpdated: () => void;
+  /** Mở form tạo sprint (nút nằm cạnh nút Kết thúc sprint). */
+  onCreateSprint?: () => void;
   onTaskClick: (taskId: string) => void;
   onSelectedSprintIdChange?: (sprintId: string | null) => void;
   onSprintUpdated?: () => void;
@@ -100,7 +106,9 @@ export function ProjectKanbanBoard({
   sprints,
   selectedSprintId: selectedSprintIdProp,
   viewerId,
+  project,
   onTaskUpdated,
+  onCreateSprint,
   onTaskClick,
   onSelectedSprintIdChange,
   onSprintUpdated,
@@ -192,6 +200,15 @@ export function ProjectKanbanBoard({
   const rawBacklogTasks = useMemo(() => localTasks.filter((t) => !t.sprintId), [localTasks]);
   const backlogTasks = useMemo(() => sortBacklogTasks(rawBacklogTasks), [rawBacklogTasks]);
 
+  /** task.update ở scope PROJECT trở lên: mọi task. Scope OWN: chỉ task được giao hoặc do mình tạo. */
+  const canMoveTask = (task: EnrichedTask) => {
+    const scope = projectScope(project, "task", "update");
+    if (!scope) return false;
+    if (SCOPE_RANK[scope] >= SCOPE_RANK.PROJECT) return true;
+    const owners = new Set([...(task.assigneeIds ?? []), task.assigneeId, task.reporterId].map(String));
+    return owners.has(String(viewerId));
+  };
+
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
     e.stopPropagation();
     if (selectedSprint && selectedSprintStatus !== "ACTIVE") {
@@ -246,7 +263,7 @@ export function ProjectKanbanBoard({
 
     const task = localTasks.find((t) => t.id === draggedTaskId);
     setDraggedTaskId(null);
-    if (!task) return;
+    if (!task || !canMoveTask(task)) return;
 
     try {
       if (targetId === "BACKLOG") {
@@ -321,23 +338,43 @@ export function ProjectKanbanBoard({
           : styles.highlightFlash
         : "";
 
+    const movable = canMoveTask(task);
+    const lockedHint = tr("Bạn không có quyền di chuyển task này. Bấm để xem chi tiết.");
+
     return (
       <div
         key={task.id}
         id={`kanban-task-${task.id}`}
-        draggable
+        draggable={movable}
+        title={movable ? undefined : lockedHint}
         tabIndex={0}
-        onDragStart={(e) => handleDragStart(e, task.id)}
+        onDragStart={(e) => {
+          if (!movable) {
+            e.preventDefault();
+            return;
+          }
+          handleDragStart(e, task.id);
+        }}
         onDragEnd={handleDragEnd}
         onClick={() => onTaskClick(task.id)}
         onKeyDown={(e) => {
           if (e.key === "Enter") onTaskClick(task.id);
         }}
-        className={`${styles.card} ${draggedTaskId === task.id ? styles.dragging : ""} ${highlightClass}`}
+        className={`${styles.card} ${movable ? "" : styles.locked} ${draggedTaskId === task.id ? styles.dragging : ""} ${highlightClass}`}
       >
         <div className={styles.cardHead}>
           <span className={styles.taskKey}>{task.key}</span>
-          <TaskPriorityBadge priority={task.priority} />
+          <span className={styles.cardHeadRight}>
+            {movable ? null : (
+              <span className={styles.lockBadge} role="img" aria-label={lockedHint}>
+                <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3" y="7" width="10" height="7" rx="1.5" />
+                  <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" />
+                </svg>
+              </span>
+            )}
+            <TaskPriorityBadge priority={task.priority} />
+          </span>
         </div>
 
         <div className={styles.taskTitle}>{task.title}</div>
@@ -401,7 +438,7 @@ export function ProjectKanbanBoard({
               onChange={(val) => onSelectedSprintIdChange?.(val)}
               menuMinWidth={360}
               searchable
-              searchPlaceholder={tr("Tìm Sprint...")}
+              searchPlaceholder={tr("Tìm Sprint")}
               options={sprints.map((s): FilterOption => {
                 const status = normalizeSprintStatus(s.status);
                 return {
@@ -421,6 +458,7 @@ export function ProjectKanbanBoard({
 
           {selectedSprint ? (
             <>
+              {selectedSprint.plannedStart || selectedSprint.plannedEnd || sprintDaysLeft !== null ? (
               <div className={styles.sprintMeta}>
                 {selectedSprint.plannedStart || selectedSprint.plannedEnd ? (
                   <span>
@@ -437,6 +475,7 @@ export function ProjectKanbanBoard({
                   </span>
                 ) : null}
               </div>
+              ) : null}
 
               <div className={styles.sprintActions}>
                 {selectedSprintStatus === "PLANNED" ? (
@@ -448,13 +487,18 @@ export function ProjectKanbanBoard({
                     {tr("Bắt đầu Sprint")}
                   </button>
                 ) : null}
+                {onCreateSprint ? (
+                  <ActionButton kind="add" onClick={onCreateSprint}>
+                    {tr("Tạo sprint")}
+                  </ActionButton>
+                ) : null}
                 <button
                   type="button"
                   className={`danger-button ${styles.endSprintButton}`}
                   disabled={selectedSprintStatus !== "ACTIVE"}
                   onClick={async () => {
                     const confirmed = await confirm({
-                      title: tr("Kết thúc Sprint"),
+                      title: tr("Kết thúc sprint"),
                       message: tr("Bạn có chắc muốn hoàn thành Sprint này?"),
                       confirmLabel: tr("Kết thúc"),
                       tone: "danger",
@@ -464,7 +508,11 @@ export function ProjectKanbanBoard({
                     }
                   }}
                 >
-                  {tr("Kết thúc Sprint")}
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M5 21V4" />
+                    <path d="M5 4h12l-2.5 4L17 12H5" />
+                  </svg>
+                  <span>{tr("Kết thúc sprint")}</span>
                 </button>
               </div>
             </>
@@ -478,7 +526,12 @@ export function ProjectKanbanBoard({
             <circle cx="12" cy="12" r="10" />
             <path d="M12 8v4M12 16h.01" />
           </svg>
-          <span>{tr("Dự án chưa có Sprint nào. Bạn có thể sử dụng nút Tạo Sprint mới ở góc phải để bắt đầu.")}</span>
+          <span>{tr("Dự án chưa có sprint nào. Hãy tạo sprint đầu tiên để bắt đầu.")}</span>
+          {onCreateSprint ? (
+            <ActionButton kind="add" className={styles.noticeAction} onClick={onCreateSprint}>
+              {tr("Tạo sprint")}
+            </ActionButton>
+          ) : null}
         </div>
       ) : null}
 

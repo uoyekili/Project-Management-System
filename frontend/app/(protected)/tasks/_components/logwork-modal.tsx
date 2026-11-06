@@ -127,7 +127,7 @@ export function LogworkModal({
                   disabled={isSubmitting}
                   required
                   maxLength={255}
-                  placeholder={t("Ví dụ: Fix lỗi đăng nhập, họp sprint...")}
+                  placeholder={t("Nhập tên logwork")}
                 />
               </div>
               <div className="app-field form-grid-span">
@@ -140,7 +140,7 @@ export function LogworkModal({
                   onChange={(event) => setDescription(event.target.value)}
                   disabled={isSubmitting}
                   required
-                  placeholder={t("Mô tả phần việc đã làm và kết quả đạt được...")}
+                  placeholder={t("Mô tả phần việc đã làm và kết quả đạt được")}
                 />
               </div>
             </div>

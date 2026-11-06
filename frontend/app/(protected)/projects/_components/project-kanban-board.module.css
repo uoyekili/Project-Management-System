@@ -14,7 +14,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-3) var(--space-4);
+  gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -73,8 +73,15 @@
 }
 
 .endSprintButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   color: var(--color-danger);
   border-color: var(--color-danger);
+}
+
+.noticeAction {
+  margin-left: auto;
 }
 
 .notice {
@@ -129,6 +136,11 @@
 .backlog {
   flex: 0 0 300px;
   background: var(--color-surface);
+}
+
+/* Ba cột trạng thái: nền sáng, chỉ ngả xanh rất nhẹ để tách khỏi nền trang. */
+.column {
+  background: color-mix(in srgb, var(--color-primary) 4%, var(--color-surface));
 }
 
 .backlogCollapsed {
@@ -259,11 +271,13 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: grab;
-  transition: border-color 120ms ease;
+  box-shadow: 0 1px 2px rgb(24 39 75 / 6%);
+  transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 
 .card:hover {
   border-color: var(--color-border-strong);
+  box-shadow: 0 2px 6px rgb(24 39 75 / 10%);
 }
 
 .card:active {
@@ -273,6 +287,30 @@
 .card:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
+}
+
+/* Task không có quyền di chuyển: con trỏ cấm, nền dịu và biểu tượng khóa, vẫn bấm xem chi tiết được. */
+.locked,
+.locked:active {
+  cursor: not-allowed;
+  background: var(--color-surface-muted, var(--color-surface));
+}
+
+.locked:hover {
+  border-color: var(--color-border);
+  box-shadow: 0 1px 2px rgb(24 39 75 / 6%);
+}
+
+.cardHeadRight {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.lockBadge {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-text-muted);
 }
 
 .dragging {

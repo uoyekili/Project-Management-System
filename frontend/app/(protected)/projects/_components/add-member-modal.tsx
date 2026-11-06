@@ -250,7 +250,7 @@ export function AddMemberModal({
                   }}
                   onFocus={() => setIsUserMenuOpen(true)}
                   placeholder={
-                    selectedPeople.length === 0 ? t("Nhập tên hoặc email người dùng...") : t("Thêm người khác...")
+                    selectedPeople.length === 0 ? t("Nhập tên hoặc email người dùng") : t("Thêm người khác")
                   }
                 />
               </div>
@@ -292,7 +292,7 @@ export function AddMemberModal({
               value={position}
               maxLength={100}
               onChange={(event) => setPosition(event.target.value)}
-              placeholder={t("Ví dụ: Backend Developer, QA Engineer...")}
+              placeholder={t("Ví dụ: Backend Developer, QA Engineer")}
             />
           </div>
 
@@ -308,7 +308,7 @@ export function AddMemberModal({
               void handleSubmit();
             }}
           >
-            {isSubmitting ? t("Đang thêm...") : t("Thêm thành viên")}
+            {isSubmitting ? t("Đang thêm") : t("Thêm thành viên")}
           </button>
         </footer>
     </Modal>,

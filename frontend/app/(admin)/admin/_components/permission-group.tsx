@@ -103,7 +103,7 @@ export function PermissionGroup({
                 >
                   <th scope="row">
                     <span className={styles.permLabel}>{row.label}</span>
-                    {isLocked(row) ? <small>Bắt buộc với role quản trị</small> : null}
+                    {isLocked(row) ? <small>Bắt buộc với vai trò quản trị</small> : null}
                   </th>
                   {!editable ? (
                     <td className={styles.permCol}>

@@ -30,7 +30,7 @@ export function SearchSelect({
   value,
   onChange,
   options,
-  placeholder = t("Chọn..."),
+  placeholder = t("Chọn"),
   clearable = false,
   disabled,
   title,
@@ -107,7 +107,7 @@ export function SearchSelect({
             <input
               type="text"
               className="app-input"
-              placeholder={t("Tìm kiếm...")}
+              placeholder={t("Tìm kiếm")}
               aria-label={t("Tìm kiếm")}
               value={query}
               autoFocus

@@ -49,7 +49,7 @@ export function LogworkApprovalsFilter({
         <FilterSearch
           value={search}
           onChange={onSearchChange}
-          placeholder={t("Tìm theo tên logwork...")}
+          placeholder={t("Tìm theo tên logwork")}
           ariaLabel={t("Tìm kiếm tên logwork")}
         />
       }
@@ -60,7 +60,7 @@ export function LogworkApprovalsFilter({
         <FilterSelect
           multiple
           searchable
-          searchPlaceholder={t("Tìm nhân sự...")}
+          searchPlaceholder={t("Tìm nhân sự")}
           value={staffFilter}
           onChange={onStaffFilterChange}
           placeholder={t("Chọn nhân sự")}
@@ -72,7 +72,7 @@ export function LogworkApprovalsFilter({
         <FilterSelect
           multiple
           searchable
-          searchPlaceholder={t("Tìm dự án...")}
+          searchPlaceholder={t("Tìm dự án")}
           value={projectFilter}
           onChange={onProjectFilterChange}
           placeholder={t("Chọn dự án")}

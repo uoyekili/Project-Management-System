@@ -90,7 +90,7 @@ function NewDepartment() {
             disabled={saving}
             onClick={() => void handleSave()}
           >
-            {saving ? "Đang tạo..." : "Tạo phòng ban"}
+            {saving ? "Đang tạo" : "Tạo phòng ban"}
           </button>
         </div>
       </div>

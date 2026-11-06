@@ -87,7 +87,7 @@ export function SettingsView() {
             onClick={handleSignOutAll}
             disabled={isSigningOutAll}
           >
-            {isSigningOutAll ? t("Đang đăng xuất...") : t("Đăng xuất tất cả")}
+            {isSigningOutAll ? t("Đang đăng xuất") : t("Đăng xuất tất cả")}
           </button>
           {signOutError ? (
             <div className="error-state form-error" role="alert">

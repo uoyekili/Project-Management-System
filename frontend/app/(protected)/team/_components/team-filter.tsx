@@ -62,7 +62,7 @@ export function TeamFilter({
         <FilterSearch
           value={search}
           onChange={onSearchChange}
-          placeholder={t("Tìm theo tên hoặc mã nhân viên...")}
+          placeholder={t("Tìm theo tên hoặc mã nhân viên")}
         />
       }
       activeCount={hasActiveFilters ? activeCount : 0}

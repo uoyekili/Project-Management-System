@@ -8,11 +8,10 @@ import { useConfirmDialog } from "@/components/confirm-dialog";
 import { FilterBar, FilterSearch } from "@/components/filter-bar";
 import { TableBodySkeleton } from "@/components/loading-state";
 import { Modal } from "@/components/modal";
-import { EmptyState, Surface } from "@/components/ui";
 
-import teamStyles from "../../../(protected)/team/styles/team.module.css";
 import styles from "./admin.module.css";
 import { errorMessage, useToast } from "./admin-ui";
+import { AdminListPage, AdminListSurface, AdminTable, adminTableStyles } from "./admin-table";
 import { DescriptionCell } from "./description-cell";
 
 export type CatalogItem = {
@@ -157,86 +156,85 @@ export function CatalogCrud({
   const columns = withRank ? 5 : 4;
 
   return (
-    <div className="filtered-list-page">
-      <FilterBar
-        search={<FilterSearch value={search} onChange={setSearch} placeholder={`Tìm ${noun}...`} />}
-        activeCount={search.trim() ? 1 : 0}
-        onReset={() => setSearch("")}
-        showReset={showFilterReset}
-        action={
-          <ActionButton
-            kind="add"
-            onClick={() => (newHref ? router.push(newHref) : openForm("new"))}
-          >
-            Thêm {noun}
-          </ActionButton>
-        }
-      />
-
-      <Surface className={`${teamStyles.tableSurface} filtered-list-table`}>
-        {!items || visible.length > 0 ? (
-          <div className={`${teamStyles.tableWrap} table-scroll`}>
-            <table className={teamStyles.table}>
-              <thead>
-                <tr>
-                  <th>Tên</th>
-                  {withRank ? <th>Thứ hạng</th> : null}
-                  <th>Mô tả</th>
-                  <th>{countLabel}</th>
-                  <th aria-label="Thao tác" />
-                </tr>
-              </thead>
-              <tbody>
-                {!items ? (
-                  <TableBodySkeleton rows={8} columns={columns} />
-                ) : (
-                  visible.map((item) => (
-                    <tr key={item.id}>
-                      <td>
-                        <strong>{item.name}</strong>
-                      </td>
-                      {withRank ? <td>{item.rank}</td> : null}
-                      <td>
-                        <DescriptionCell text={item.description} />
-                      </td>
-                      <td>{item.user_count ?? item.member_count ?? 0}</td>
-                      <td>
-                        <div className={styles.rowActions}>
-                          {renderRowAction?.(item)}
-                          {getItemHref ? (
-                            <button
-                              type="button"
-                              className={`secondary-button ${teamStyles.detailButton}`}
-                              onClick={() => {
-                                router.push(getItemHref(item));
-                              }}
-                            >
-                              Chi tiết
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              className={`secondary-button ${teamStyles.detailButton}`}
-                              onClick={() => openForm(item)}
-                            >
-                              Sửa
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <EmptyState
-            title={search ? `Không tìm thấy ${noun} phù hợp` : `Chưa có ${noun} nào`}
-            description={search ? "Thử đổi từ khóa tìm kiếm." : `Nhấn "Thêm ${noun}" để tạo mới.`}
+    <>
+      <AdminListPage
+        filters={
+          <FilterBar
+            search={<FilterSearch value={search} onChange={setSearch} placeholder={`Tìm ${noun}`} />}
+            activeCount={search.trim() ? 1 : 0}
+            onReset={() => setSearch("")}
+            showReset={showFilterReset}
+            action={
+              <ActionButton
+                kind="add"
+                onClick={() => (newHref ? router.push(newHref) : openForm("new"))}
+              >
+                Thêm {noun}
+              </ActionButton>
+            }
           />
-        )}
-      </Surface>
+        }
+      >
+        <AdminListSurface
+          hasContent={!items || visible.length > 0}
+          emptyTitle={search ? `Không tìm thấy ${noun} phù hợp` : `Chưa có ${noun} nào`}
+          emptyDescription={search ? "Thử đổi từ khóa tìm kiếm." : `Nhấn "Thêm ${noun}" để tạo mới.`}
+        >
+          <AdminTable>
+            <thead>
+              <tr>
+                <th>Tên</th>
+                {withRank ? <th>Thứ hạng</th> : null}
+                <th>Mô tả</th>
+                <th>{countLabel}</th>
+                <th data-actions aria-label="Thao tác" />
+              </tr>
+            </thead>
+            <tbody>
+              {!items ? (
+                <TableBodySkeleton rows={8} columns={columns} />
+              ) : (
+                visible.map((item) => (
+                  <tr key={item.id}>
+                    <td data-primary data-label="Tên">
+                      <strong>{item.name}</strong>
+                    </td>
+                    {withRank ? <td data-label="Thứ hạng">{item.rank}</td> : null}
+                    <td data-label="Mô tả">
+                      <DescriptionCell text={item.description} />
+                    </td>
+                    <td data-label={countLabel}>{item.user_count ?? item.member_count ?? 0}</td>
+                    <td data-actions>
+                      <div className={styles.rowActions}>
+                        {renderRowAction?.(item)}
+                        {getItemHref ? (
+                          <button
+                            type="button"
+                            className={`secondary-button ${adminTableStyles.actionButton}`}
+                            onClick={() => {
+                              router.push(getItemHref(item));
+                            }}
+                          >
+                            Chi tiết
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className={`secondary-button ${adminTableStyles.actionButton}`}
+                            onClick={() => openForm(item)}
+                          >
+                            Sửa
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </AdminTable>
+        </AdminListSurface>
+      </AdminListPage>
 
       {editing ? (
         <Modal
@@ -303,12 +301,12 @@ export function CatalogCrud({
                 Hủy
               </button>
               <button type="submit" className="primary-button" disabled={saving}>
-                {saving ? "Đang lưu..." : "Lưu thay đổi"}
+                {saving ? "Đang lưu" : "Lưu thay đổi"}
               </button>
             </footer>
           </form>
         </Modal>
       ) : null}
-    </div>
+    </>
   );
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { SoftwareLogo } from "@/components/software-logo";
 import { UserAvatar } from "@/components/user-avatar";
@@ -11,28 +11,28 @@ import { useSidebarCollapsed } from "@/hooks/use-sidebar-collapsed";
 import { canCode, PERM } from "@/lib/permissions";
 import { markIntentionalLogout, signOut } from "@/services/auth/session";
 
-import styles from "./admin.module.css";
+import styles from "./admin-shell.module.css";
 import { AdminIcon, AdminTitleContext, cx, ToastProvider, type AdminIconName } from "./admin-ui";
 
 type NavItem = { href: string; label: string; icon: AdminIconName; permission?: string };
 
 /** Mỗi mục chỉ hiện khi role có đúng permission quản trị tương ứng. */
 const NAV: NavItem[] = [
-  { href: "/admin", label: "Dashboard", icon: "dashboard" },
-  { href: "/admin/users", label: "Users", icon: "users", permission: PERM.userManage },
+  { href: "/admin", label: "Tổng quan", icon: "dashboard" },
+  { href: "/admin/users", label: "Người dùng", icon: "users", permission: PERM.userManage },
   {
     href: "/admin/departments",
-    label: "Departments",
+    label: "Phòng ban",
     icon: "building",
     permission: PERM.departmentManage,
   },
   {
     href: "/admin/job-titles",
-    label: "Job Titles",
+    label: "Chức danh",
     icon: "briefcase",
     permission: PERM.catalogManage,
   },
-  { href: "/admin/roles", label: "Permissions", icon: "shield", permission: PERM.roleManage },
+  { href: "/admin/roles", label: "Phân quyền", icon: "shield", permission: PERM.roleManage },
 ];
 
 const TITLES: Record<string, string> = {
@@ -49,6 +49,41 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const { collapsed: isSidebarCollapsed, toggle: toggleSidebar } = useSidebarCollapsed();
   const [titleOverride, setTitleOverride] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  // Ngăn kéo gắn với đường dẫn lúc mở: đổi trang thì tự đóng, không cần effect đặt lại state.
+  const [drawerFor, setDrawerFor] = useState<string | null>(null);
+  const drawerOpen = isMobile && drawerFor === pathname;
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const sidebarRef = useRef<HTMLElement | null>(null);
+
+  // Dưới 768px sidebar là ngăn kéo; trạng thái thu gọn không áp dụng.
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 768px)");
+    const sync = () => setIsMobile(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+
+  const closeDrawer = useCallback(() => {
+    setDrawerFor(null);
+    menuButtonRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    sidebarRef.current?.querySelector<HTMLElement>("a, button")?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeDrawer();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [closeDrawer, drawerOpen]);
 
   // Quyền thật do backend kiểm tra; đây chỉ chuyển hướng UX khi tài khoản không phải Admin.
   useEffect(() => {
@@ -82,7 +117,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const currentTitle =
     TITLES[pathname] ??
     NAV.find((item) => item.href !== "/admin" && pathname.startsWith(item.href))?.label ??
-    "Dashboard";
+    "Tổng quan";
 
   return (
     <ToastProvider>
@@ -91,10 +126,16 @@ export function AdminShell({ children }: { children: ReactNode }) {
           className={cx(
             "app-shell",
             "app-shell-fill",
-            isSidebarCollapsed && "is-sidebar-collapsed",
+            styles.shell,
+            isSidebarCollapsed && !isMobile && "is-sidebar-collapsed",
           )}
         >
-          <aside id="app-sidebar" className="sidebar">
+          <aside
+            id="app-sidebar"
+            ref={sidebarRef}
+            className={cx("sidebar", drawerOpen && styles.drawerOpen)}
+            aria-hidden={isMobile && !drawerOpen ? true : undefined}
+          >
             <div className="sidebar-header">
               <div className="sidebar-logo-container">
                 <Link href="/admin" className="sidebar-logo-link" aria-label="Trang chủ quản trị">
@@ -156,9 +197,30 @@ export function AdminShell({ children }: { children: ReactNode }) {
             </div>
           </aside>
 
+          <div
+            className={cx(styles.overlay, drawerOpen && styles.overlayVisible)}
+            onClick={closeDrawer}
+            aria-hidden="true"
+          />
+
           <div className={styles.main}>
             <header className={styles.topbar}>
-              <h1 className={styles.topbarTitle}>{titleOverride ?? currentTitle}</h1>
+              <div className={styles.topbarLead}>
+                <button
+                  ref={menuButtonRef}
+                  type="button"
+                  className={styles.menuButton}
+                  aria-label="Mở menu điều hướng"
+                  aria-expanded={drawerOpen}
+                  aria-controls="app-sidebar"
+                  onClick={() => setDrawerFor(pathname)}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                    <path d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+                <h1 className={styles.topbarTitle}>{titleOverride ?? currentTitle}</h1>
+              </div>
 
               <div className="profile-dropdown" ref={menuRef}>
                 <button

@@ -6,14 +6,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActionButton } from "@/components/action-button";
 import { FilterBar, FilterSearch } from "@/components/filter-bar";
 import { TableBodySkeleton } from "@/components/loading-state";
-import { EmptyState, Surface } from "@/components/ui";
 import { PERM } from "@/lib/permissions";
 import { adminApi } from "@/services/api";
 import type { AdminRole } from "@/types";
 
-import teamStyles from "../../../(protected)/team/styles/team.module.css";
 import styles from "../_components/admin.module.css";
 import { errorMessage, RequirePermission, useToast } from "../_components/admin-ui";
+import { AdminListPage, AdminListSurface, AdminTable, adminTableStyles } from "../_components/admin-table";
 import { DescriptionCell } from "../_components/description-cell";
 
 function RolesContent() {
@@ -43,73 +42,70 @@ function RolesContent() {
   }, [roles, search]);
 
   return (
-    <div className="filtered-list-page">
-      <FilterBar
-        search={<FilterSearch value={search} onChange={setSearch} placeholder="Tìm role..." />}
-        activeCount={search.trim() ? 1 : 0}
-        onReset={() => setSearch("")}
-        showReset={false}
-        action={
-          <ActionButton kind="add" onClick={() => router.push("/admin/roles/new")}>
-            Thêm role
-          </ActionButton>
-        }
-      />
-
-      <Surface className={`${teamStyles.tableSurface} filtered-list-table`}>
-        {!roles || visible.length > 0 ? (
-          <div className={`${teamStyles.tableWrap} table-scroll`}>
-            <table className={teamStyles.table}>
-              <thead>
-                <tr>
-                  <th>Role</th>
-                  <th>Mô tả</th>
-                  <th>Quyền</th>
-                  <th>Người dùng</th>
-                  <th aria-label="Thao tác" />
+    <AdminListPage
+      filters={
+        <FilterBar
+          search={<FilterSearch value={search} onChange={setSearch} placeholder="Tìm vai trò" />}
+          activeCount={search.trim() ? 1 : 0}
+          onReset={() => setSearch("")}
+          showReset={false}
+          action={
+            <ActionButton kind="add" onClick={() => router.push("/admin/roles/new")}>
+              Thêm vai trò
+            </ActionButton>
+          }
+        />
+      }
+    >
+      <AdminListSurface
+        hasContent={!roles || visible.length > 0}
+        emptyTitle={search ? "Không tìm thấy vai trò phù hợp" : "Chưa có vai trò nào"}
+        emptyDescription={search ? "Thử đổi từ khóa tìm kiếm." : 'Nhấn "Thêm vai trò" để tạo mới.'}
+      >
+        <AdminTable>
+          <thead>
+            <tr>
+              <th>Vai trò</th>
+              <th>Mô tả</th>
+              <th>Quyền</th>
+              <th>Người dùng</th>
+              <th data-actions aria-label="Thao tác" />
+            </tr>
+          </thead>
+          <tbody>
+            {!roles ? (
+              <TableBodySkeleton rows={6} columns={5} />
+            ) : (
+              visible.map((role) => (
+                <tr key={role.id}>
+                  <td data-primary data-label="Vai trò">
+                    <strong>{role.name}</strong>
+                  </td>
+                  <td data-label="Mô tả">
+                    <DescriptionCell text={role.description} />
+                  </td>
+                  <td data-label="Quyền">{role.permission_ids.length}</td>
+                  <td data-label="Người dùng">{role.usage_count}</td>
+                  <td data-actions>
+                    <div className={styles.rowActions}>
+                      <button
+                        type="button"
+                        className={`secondary-button ${adminTableStyles.actionButton}`}
+                        onClick={() => {
+                          router.push(`/admin/roles/${role.id}`);
+                        }}
+                      >
+                        Chi tiết
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {!roles ? (
-                  <TableBodySkeleton rows={6} columns={5} />
-                ) : (
-                  visible.map((role) => (
-                    <tr key={role.id}>
-                      <td>
-                        <strong>{role.name}</strong>
-                      </td>
-                      <td>
-                        <DescriptionCell text={role.description} />
-                      </td>
-                      <td>{role.permission_ids.length}</td>
-                      <td>{role.usage_count}</td>
-                      <td>
-                        <div className={styles.rowActions}>
-                          <button
-                            type="button"
-                            className={`secondary-button ${teamStyles.detailButton}`}
-                            onClick={() => {
-                              router.push(`/admin/roles/${role.id}`);
-                            }}
-                          >
-                            Chi tiết
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <EmptyState
-            title={search ? "Không tìm thấy role phù hợp" : "Chưa có role nào"}
-            description={search ? "Thử đổi từ khóa tìm kiếm." : 'Nhấn "Thêm role" để tạo mới.'}
-          />
-        )}
-      </Surface>
-    </div>
+              ))
+            )}
+          </tbody>
+        </AdminTable>
+      </AdminListSurface>
+    </AdminListPage>
   );
 }
 

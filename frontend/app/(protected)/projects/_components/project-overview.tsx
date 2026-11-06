@@ -298,7 +298,7 @@ export function ProjectOverview({
   }, [project, tasks, sprints, overview]);
 
   if (isLoading) {
-    return <LoadingState variant="dashboard" label={t("Đang tổng hợp dữ liệu dự án...")} />;
+    return <LoadingState variant="dashboard" label={t("Đang tổng hợp dữ liệu dự án")} />;
   }
 
   if (!project || !data) {

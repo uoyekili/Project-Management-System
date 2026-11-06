@@ -70,7 +70,7 @@ export default function AdminDashboardPage() {
               icon="building"
               label="Phòng ban"
               value={data.total_departments}
-              hint={`${data.total_roles} role đang cấu hình`}
+              hint={`${data.total_roles} vai trò đang cấu hình`}
             />
           </>
         ) : (
@@ -96,7 +96,7 @@ export default function AdminDashboardPage() {
           )}
         </section>
         <section className={cx(styles.card, styles.cardPad)}>
-          <h3 className={styles.cardTitle}>Người dùng theo role</h3>
+          <h3 className={styles.cardTitle}>Người dùng theo vai trò</h3>
           {data ? (
             <BarList items={data.users_by_role} />
           ) : (

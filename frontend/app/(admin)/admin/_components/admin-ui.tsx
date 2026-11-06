@@ -91,37 +91,6 @@ export function AdminIcon({
   );
 }
 
-/* ------------------------------------------------------------ page header */
-/** Tiêu đề trang nằm ở topbar; ở đây chỉ còn các nút hành động của trang. */
-export function PageHeader({ action }: { action?: ReactNode }) {
-  if (!action) return null;
-  return (
-    <div className={styles.pageHeader}>
-      <div className={styles.pageActions}>{action}</div>
-    </div>
-  );
-}
-
-export function Field({
-  label,
-  children,
-  full,
-  hint,
-}: {
-  label: string;
-  children: ReactNode;
-  full?: boolean;
-  hint?: string;
-}) {
-  return (
-    <label className={cx(styles.field, full && styles.full)}>
-      <span>{label}</span>
-      {children}
-      {hint ? <small className={styles.hint}>{hint}</small> : null}
-    </label>
-  );
-}
-
 /* ------------------------------------------------------------------ badge */
 export type BadgeTone = "neutral" | "info" | "ok" | "warn" | "danger";
 
@@ -167,22 +136,6 @@ export function ScopeBadge({ scope }: { scope: PermissionScope }) {
   return <span className={cx(styles.badge, SCOPE_CLASS[scope])}>{SCOPE_NAME[scope]}</span>;
 }
 
-export function StatusBadge({
-  active,
-  on = "Hoạt động",
-  off = "Đã khóa",
-}: {
-  active: boolean;
-  on?: string;
-  off?: string;
-}) {
-  return (
-    <Badge tone={active ? "ok" : "neutral"} dot>
-      {active ? on : off}
-    </Badge>
-  );
-}
-
 /* ---------------------------------------------------------------- stat tile */
 export function StatTile({
   icon,
@@ -214,71 +167,6 @@ export function StatTile({
         <span className={styles.statLabel}>{label}</span>
         <span className={styles.statValue}>{value}</span>
         {hint ? <span className={styles.statHint}>{hint}</span> : null}
-      </div>
-    </div>
-  );
-}
-
-/* ---------------------------------------------------------------- toolbar */
-export function SearchBox({
-  value,
-  onChange,
-  placeholder = "Tìm kiếm...",
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-}) {
-  return (
-    <div className={styles.search}>
-      <AdminIcon name="search" />
-      <input
-        className={styles.input}
-        type="search"
-        value={value}
-        placeholder={placeholder}
-        aria-label={placeholder}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    </div>
-  );
-}
-
-export function Pager({
-  page,
-  totalPages,
-  total,
-  label,
-  onChange,
-}: {
-  page: number;
-  totalPages: number;
-  total: number;
-  label: string;
-  onChange: (page: number) => void;
-}) {
-  return (
-    <div className={styles.pagination}>
-      <span>
-        {total} {label} · Trang {page}/{totalPages}
-      </span>
-      <div>
-        <button
-          type="button"
-          className="secondary-button"
-          disabled={page <= 1}
-          onClick={() => onChange(page - 1)}
-        >
-          Trước
-        </button>
-        <button
-          type="button"
-          className="secondary-button"
-          disabled={page >= totalPages}
-          onClick={() => onChange(page + 1)}
-        >
-          Sau
-        </button>
       </div>
     </div>
   );
@@ -409,7 +297,7 @@ export function RequirePermission({ code, children }: { code: string; children: 
         <div>
           <h2>Bạn không có quyền truy cập</h2>
           <p>
-            Role hiện tại chưa được cấp quyền cho khu vực này. Liên hệ quản trị viên để được cấu
+            Vai trò hiện tại chưa được cấp quyền cho khu vực này. Liên hệ quản trị viên để được cấu
             hình.
           </p>
         </div>

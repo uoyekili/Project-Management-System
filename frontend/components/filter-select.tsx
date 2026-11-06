@@ -146,7 +146,7 @@ export function FilterSelect(props: FilterSelectProps) {
     className = "",
     onEditClick,
     searchable: searchableProp = false,
-    searchPlaceholder = t("Tìm kiếm..."),
+    searchPlaceholder = t("Tìm kiếm"),
     size = "default",
     disabled = false,
     allLabel,

@@ -91,7 +91,7 @@ function NewUser() {
 
   async function handleSave() {
     if (!form.full_name.trim() || !form.email.trim() || form.role_id == null) {
-      setError("Vui lòng nhập họ tên, email và chọn role.");
+      setError("Vui lòng nhập họ tên, email và chọn vai trò.");
       return;
     }
     setSaving(true);
@@ -215,7 +215,7 @@ function NewUser() {
             disabled={saving}
             onClick={() => void handleSave()}
           >
-            {saving ? "Đang lưu..." : "Thêm nhân viên"}
+            {saving ? "Đang lưu" : "Thêm nhân viên"}
           </button>
         </div>
       </div>
@@ -258,12 +258,12 @@ function NewUser() {
             />
           </label>
           <div className="app-field">
-            <span className="app-label">Role</span>
+            <span className="app-label">Vai trò</span>
             <FilterSelect
               size="lg"
               searchable
-              searchPlaceholder="Tìm role..."
-              placeholder="Chọn role"
+              searchPlaceholder="Tìm vai trò"
+              placeholder="Chọn vai trò"
               value={form.role_id == null ? "" : String(form.role_id)}
               onChange={setRole}
               options={idOptions(roles)}

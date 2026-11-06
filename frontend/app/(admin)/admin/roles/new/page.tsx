@@ -28,7 +28,7 @@ import {
 function NewRole() {
   const router = useRouter();
   const toast = useToast();
-  useAdminTitle("Thêm role");
+  useAdminTitle("Thêm vai trò");
 
   const [permissions, setPermissions] = useState<AdminPermission[]>([]);
   const [name, setName] = useState("");
@@ -80,7 +80,7 @@ function NewRole() {
 
   async function handleSave() {
     if (!name.trim()) {
-      setError("Vui lòng nhập tên role.");
+      setError("Vui lòng nhập tên vai trò.");
       return;
     }
     setSaving(true);
@@ -91,7 +91,7 @@ function NewRole() {
         description: description.trim() || null,
         permission_ids: selectionToIds(draft, permissions),
       });
-      toast.success("Đã tạo role.");
+      toast.success("Đã tạo vai trò.");
       router.push(`/admin/roles/${created.id}`);
     } catch (err) {
       setError(errorMessage(err));
@@ -118,7 +118,7 @@ function NewRole() {
             disabled={saving}
             onClick={() => void handleSave()}
           >
-            {saving ? "Đang tạo..." : "Tạo role"}
+            {saving ? "Đang tạo" : "Tạo vai trò"}
           </button>
         </div>
       </div>
@@ -129,7 +129,7 @@ function NewRole() {
             <h2>Thông tin</h2>
           </div>
           <label className="app-field">
-            <span className="app-label">Tên role</span>
+            <span className="app-label">Tên vai trò</span>
             <input
               className={`app-input ${styles.plainInput}`}
               value={name}

@@ -1,0 +1,162 @@
+[
+  {
+    "id": 1,
+    "key": "drew",
+    "full_name": "Nguyễn Văn Dũng",
+    "email": "dungnv@gmail.com",
+    "role_id": 1,
+    "gender": "male",
+    "file": "avatars/male/drew-cano.jpg",
+    "blob": "users/user_1_31e8f1a7ad24.jpg"
+  },
+  {
+    "id": 2,
+    "key": "olivia",
+    "full_name": "Lê Hồng Nhung",
+    "email": "nhunglh@gmail.com",
+    "role_id": 2,
+    "gender": "female",
+    "file": "avatars/female/olivia-rhye.jpg",
+    "blob": "users/user_2_84a9217fd5e0.jpg"
+  },
+  {
+    "id": 3,
+    "key": "lana",
+    "full_name": "Vũ Phương Anh",
+    "email": "anhvp@gmail.com",
+    "role_id": 3,
+    "gender": "female",
+    "file": "avatars/female/lana-steiner.jpg",
+    "blob": "users/user_3_0bad14a0101b.jpg"
+  },
+  {
+    "id": 4,
+    "key": "ethan",
+    "full_name": "Trần Minh Quân",
+    "email": "quantm@gmail.com",
+    "role_id": 3,
+    "gender": "male",
+    "file": "avatars/male/ethan-campbell.jpg",
+    "blob": "users/user_4_507661e8ba95.jpg"
+  },
+  {
+    "id": 5,
+    "key": "noah",
+    "full_name": "Ngô Quang Huy",
+    "email": "huynq@gmail.com",
+    "role_id": 4,
+    "gender": "male",
+    "file": "avatars/male/noah-pierre.jpg",
+    "blob": "users/user_5_8af18f2de84b.jpg"
+  },
+  {
+    "id": 6,
+    "key": "sophia",
+    "full_name": "Bùi Thu Trang",
+    "email": "trangbt@gmail.com",
+    "role_id": 4,
+    "gender": "female",
+    "file": "avatars/female/sophia-perez.jpg",
+    "blob": "users/user_6_a06155f57b7f.jpg"
+  },
+  {
+    "id": 7,
+    "key": "joshua",
+    "full_name": "Hoàng Mạnh Cường",
+    "email": "cuonghm@gmail.com",
+    "role_id": 4,
+    "gender": "male",
+    "file": "avatars/male/joshua-wilson.jpg",
+    "blob": "users/user_7_66a7abb47fc6.jpg"
+  },
+  {
+    "id": 8,
+    "key": "natali",
+    "full_name": "Nguyễn Thị Thảo",
+    "email": "thaont@gmail.com",
+    "role_id": 5,
+    "gender": "female",
+    "file": "avatars/female/natali-craig.jpg",
+    "blob": "users/user_8_a30e66c4ab2b.jpg"
+  },
+  {
+    "id": 9,
+    "key": "riley",
+    "full_name": "Nguyễn Đức Thắng",
+    "email": "thangnd@gmail.com",
+    "role_id": 5,
+    "gender": "male",
+    "file": "avatars/male/riley-moore.jpg",
+    "blob": "users/user_9_8b25ba6d44fa.jpg"
+  },
+  {
+    "id": 10,
+    "key": "amelie",
+    "full_name": "Trịnh Thu Hà",
+    "email": "hatt@gmail.com",
+    "role_id": 5,
+    "gender": "female",
+    "file": "avatars/female/amelie-laurent.jpg",
+    "blob": "users/user_10_d244a6145e8d.jpg"
+  },
+  {
+    "id": 11,
+    "key": "owen",
+    "full_name": "Trần Quốc Bảo",
+    "email": "baotq@gmail.com",
+    "role_id": 5,
+    "gender": "male",
+    "file": "avatars/male/owen-garcia.jpg",
+    "blob": "users/user_11_74751cbc2ea6.jpg"
+  },
+  {
+    "id": 12,
+    "key": "candice",
+    "full_name": "Đỗ Thị Mai",
+    "email": "maidt@gmail.com",
+    "role_id": 5,
+    "gender": "female",
+    "file": "avatars/female/candice-wu.jpg",
+    "blob": "users/user_12_bc357b34a436.jpg"
+  },
+  {
+    "id": 13,
+    "key": "cameron",
+    "full_name": "Phan Anh Tuấn",
+    "email": "tuanpa@gmail.com",
+    "role_id": 5,
+    "gender": "male",
+    "file": "avatars/male/cameron-yang.jpg",
+    "blob": "users/user_13_6ede410b7adf.jpg"
+  },
+  {
+    "id": 14,
+    "key": "katherine",
+    "full_name": "Phùng Thị Oanh",
+    "email": "oanhpt@gmail.com",
+    "role_id": 6,
+    "gender": "female",
+    "file": "avatars/female/katherine-moss.jpg",
+    "blob": "users/user_14_20fe6df0fd67.jpg"
+  },
+  {
+    "id": 15,
+    "key": "sienna",
+    "full_name": "Trần Bảo Ngọc",
+    "email": "ngoctb@gmail.com",
+    "role_id": 6,
+    "gender": "female",
+    "file": "avatars/female/sienna-hewitt.jpg",
+    "blob": "users/user_15_d5a33cf3a997.jpg"
+  },
+  {
+    "id": 16,
+    "key": "ashwin",
+    "full_name": "Đặng Hữu Phước",
+    "email": "phuocdh@gmail.com",
+    "role_id": 6,
+    "gender": "male",
+    "file": "avatars/male/ashwin-santiago.jpg",
+    "blob": "users/user_16_617d5646f72f.jpg"
+  }
+]

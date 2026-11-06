@@ -196,7 +196,7 @@ export function TaskCreateView({ projectId, parentTaskId, users, viewer }: TaskC
                 : t("Nhập tên công việc, ngày bắt đầu và hạn chót hợp lệ để tạo task")
             }
           >
-            {isSaving ? t("Đang tạo...") : t("Tạo task")}
+            {isSaving ? t("Đang tạo") : t("Tạo task")}
           </button>
         </div>
       </div>
@@ -208,7 +208,7 @@ export function TaskCreateView({ projectId, parentTaskId, users, viewer }: TaskC
           id="task-create-title"
           autoFocus
           className={`app-input ${styles.createTitleInput}`}
-          placeholder={t("Nhập tên công việc...")}
+          placeholder={t("Nhập tên công việc")}
           value={draft.title}
           onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))}
         />
@@ -281,7 +281,7 @@ export function TaskCreateView({ projectId, parentTaskId, users, viewer }: TaskC
             onChange={(event) =>
               setDraft((current) => ({ ...current, description: event.target.value }))
             }
-            placeholder={t("Nhập mô tả công việc...")}
+            placeholder={t("Nhập mô tả công việc")}
             disabled={isSaving}
           />
           <div className={styles.hint}>{draft.description.length}  {t("ký tự")}</div>

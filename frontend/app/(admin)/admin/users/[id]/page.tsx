@@ -3,7 +3,6 @@
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-import { ActionButton } from "@/components/action-button";
 import { BackButton } from "@/components/back-button";
 import { useConfirmDialog } from "@/components/confirm-dialog";
 import { FilterSelect } from "@/components/filter-select";
@@ -15,6 +14,7 @@ import { adminApi } from "@/services/api";
 import type { AdminDepartment, AdminJobTitle, AdminRole, AdminUser } from "@/types";
 
 import styles from "../../_components/admin.module.css";
+import { AdminDetailActions, AdminDetailTopbar } from "../../_components/admin-detail-header";
 import {
   EmptyDash,
   errorMessage,
@@ -129,7 +129,7 @@ function UserDetail({ userId }: { userId: number }) {
   async function handleSave() {
     if (!user || !form) return;
     if (!form.full_name.trim() || form.role_id == null) {
-      setFormError("Vui lòng nhập họ tên và chọn role.");
+      setFormError("Vui lòng nhập họ tên và chọn vai trò.");
       return;
     }
     setSaving(true);
@@ -242,35 +242,15 @@ function UserDetail({ userId }: { userId: number }) {
 
   return (
     <div className={styles.detailPage}>
-      <div className={styles.detailTopbar}>
-        {backLink}
-        <div className={styles.detailTopbarActions}>
-          {editing ? (
-            <>
-              <button
-                type="button"
-                className="secondary-button"
-                disabled={saving}
-                onClick={() => setEditing(false)}
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                className="primary-button"
-                disabled={saving}
-                onClick={() => void handleSave()}
-              >
-                {saving ? "Đang lưu..." : "Lưu thay đổi"}
-              </button>
-            </>
-          ) : (
-            <ActionButton kind="edit" onClick={startEdit}>
-              Chỉnh sửa
-            </ActionButton>
-          )}
-        </div>
-      </div>
+      <AdminDetailTopbar back={backLink}>
+        <AdminDetailActions
+          editing={editing}
+          saving={saving}
+          onEdit={startEdit}
+          onCancel={() => setEditing(false)}
+          onSave={() => void handleSave()}
+        />
+      </AdminDetailTopbar>
 
       <div className={styles.userDetailGrid}>
         <Surface className={styles.profileCard}>
@@ -325,14 +305,14 @@ function UserDetail({ userId }: { userId: number }) {
                   />
                 </label>
                 <div className="app-field">
-                  <span className="app-label">Role</span>
+                  <span className="app-label">Vai trò</span>
                   <FilterSelect
                     size="lg"
                     searchable
                     value={form.role_id == null ? "" : String(form.role_id)}
                     onChange={setRole}
                     options={idOptions(roles)}
-                    placeholder="Chọn role"
+                    placeholder="Chọn vai trò"
                   />
                 </div>
                 <div className="app-field">
@@ -385,7 +365,7 @@ function UserDetail({ userId }: { userId: number }) {
                   <dd>{user.phone_number || <EmptyDash />}</dd>
                 </div>
                 <div className={styles.infoItem}>
-                  <dt>Role</dt>
+                  <dt>Vai trò</dt>
                   <dd>{user.role?.name ?? <EmptyDash />}</dd>
                 </div>
                 <div className={styles.infoItem}>
